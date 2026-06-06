@@ -400,7 +400,6 @@ async function renderAdminSidebar() {
         const conv    = allConversations[ownerId];
         const last    = conv.msgs[conv.msgs.length - 1];
         const preview = last ? last.content.slice(0,24).split('\n').join(' ') + (last.content.length>24?'\u2026':'') : '';
-/g,' ') + (last.content.length>24?'…':'') : '';
         const badge   = conv.unread > 0 ? `<span class="msg-conv-badge">${conv.unread}</span>` : '';
         const active  = ownerId === currentChatOwner ? ' active' : '';
         return `<div class="msg-conv-item${active}" onclick="openAdminChat('${ownerId}','${nameMap[ownerId]}')">
