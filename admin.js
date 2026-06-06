@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, updateDoc, doc, getDoc, setDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCBSj96SOqhiQgMjOHoku3ARM52FAp5qyg",
@@ -88,12 +88,17 @@ function renderBookingsTable(data) {
         const quickBtn = b.status === 'Pending'
             ? `<button onclick="quickConfirm('${b.id}')" style="background:#3498db;color:white;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">確認接受</button>`
             : '';
+        const canDelete = b.status === 'Cancelled' || b.status === 'Completed';
+        const deleteBtn = canDelete
+            ? `<button onclick="deleteBooking('${b.id}')" style="background:none;border:1px solid #e74c3c;color:#e74c3c;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">🗑️</button>`
+            : `<span style="color:#ddd;font-size:12px;">—</span>`;
         return `<tr>
             <td>${b.date}<br><small>${b.time}</small></td>
             <td><b>${b.petName}</b> <small style="color:#888;">${b.petType||''}</small><br><small>飼主：${b.ownerId}</small></td>
             <td>${service}</td>
             <td style="color:${color};font-weight:bold;font-size:13px;">${b.status}</td>
             <td>${quickBtn}</td>
+            <td>${deleteBtn}</td>
         </tr>`;
     }).join('');
 }
@@ -223,6 +228,34 @@ document.getElementById('cancelBtn').onclick = async () => {
         document.getElementById('actionArea').classList.add('hidden');
         loadAllData();
     } catch(e) { alert("取消失敗：" + e.message); }
+};
+
+// ════════════════════════════════════════════
+// 刪除單筆（僅 Cancelled / Completed）
+// ════════════════════════════════════════════
+window.deleteBooking = async (id) => {
+    if (!confirm("確定要永久刪除此筆紀錄嗎？此操作無法還原。")) return;
+    try {
+        await deleteDoc(doc(db, "bookings", id));
+        allBookings = allBookings.filter(b => b.id !== id);
+        renderBookingsTable(allBookings);
+        renderPendingSelect(allBookings);
+        alert("✅ 已成功刪除！");
+    } catch(e) { alert("刪除失敗：" + e.message); }
+};
+
+// 批次清除 Cancelled + Completed
+document.getElementById('batchDeleteBtn').onclick = async () => {
+    const targets = allBookings.filter(b => b.status === 'Cancelled' || b.status === 'Completed');
+    if (targets.length === 0) return alert("目前沒有可清除的紀錄（僅清除已取消／已完成的單據）。");
+    if (!confirm(`確定要批次刪除 ${targets.length} 筆已取消／已完成的紀錄嗎？此操作無法還原。`)) return;
+    try {
+        await Promise.all(targets.map(b => deleteDoc(doc(db, "bookings", b.id))));
+        allBookings = allBookings.filter(b => b.status !== 'Cancelled' && b.status !== 'Completed');
+        renderBookingsTable(allBookings);
+        renderPendingSelect(allBookings);
+        alert(`✅ 已成功清除 ${targets.length} 筆紀錄！`);
+    } catch(e) { alert("批次刪除失敗：" + e.message); }
 };
 
 // ════════════════════════════════════════════

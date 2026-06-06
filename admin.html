@@ -123,14 +123,17 @@
             </div>
 
             <!-- 全部紀錄 -->
-            <h3 style="font-size:15px;margin-bottom:8px;">📅 全客戶預約紀錄</h3>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <h3 style="font-size:15px;margin:0;">📅 全客戶預約紀錄</h3>
+                <button id="batchDeleteBtn" class="btn-sm btn-red" style="font-size:13px;padding:8px 16px;">🗑️ 批次清除已取消／已完成</button>
+            </div>
             <div class="search-bar">
                 <input type="text" id="searchInput" placeholder="搜尋飼主手機號碼 或 寵物名字...">
                 <button id="searchBtn">搜尋</button>
                 <button id="clearSearchBtn" style="background:#95a5a6;width:auto;padding:10px 16px;font-size:14px;border-radius:8px;">清除</button>
             </div>
             <table>
-                <thead><tr><th>預約期間</th><th>寵物 / 飼主</th><th>服務項目</th><th>狀態</th><th>快速操作</th></tr></thead>
+                <thead><tr><th>預約期間</th><th>寵物 / 飼主</th><th>服務項目</th><th>狀態</th><th>快速操作</th><th>刪除</th></tr></thead>
                 <tbody id="allBookingsTable"></tbody>
             </table>
         </div>
