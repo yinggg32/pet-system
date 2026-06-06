@@ -51,7 +51,14 @@ function doLogin(phone, name) {
     fetchMyBookings();
 }
 
-// 預約功能 (包含防撞機制！)
+document.getElementById('logoutBtn').onclick = () => {
+    userPhone = null;
+    document.getElementById('phoneInput').value = '';
+    document.getElementById('authSection').classList.remove('hidden');
+    document.getElementById('dashboardSection').classList.add('hidden');
+};
+
+// 預約功能 (繞過 Firebase 複合索引限制的完美防撞機制)
 document.getElementById('bookBtn').onclick = async () => {
     const pet = document.getElementById('petNameInput').value;
     const service = document.getElementById('serviceSelect').value;
@@ -60,15 +67,20 @@ document.getElementById('bookBtn').onclick = async () => {
 
     if(!pet || !date) return alert("請填寫完整日期與寵物名字");
 
-    // 【防撞機制核心】: 查詢該時段是否已有預約
-    const q = query(collection(db, "bookings"),
-        where("date", "==", date),
-        where("time", "==", time),
-        where("status", "!=", "Cancelled") // 已取消的時段不算
-    );
-
+    // 先抓出「該日期」的所有預約
+    const q = query(collection(db, "bookings"), where("date", "==", date));
     const checkSnap = await getDocs(q);
-    if(!checkSnap.empty) {
+
+    let isConflict = false;
+    // 在前端用 JS 判斷時段與狀態，避開資料庫報錯
+    checkSnap.forEach(d => {
+        const b = d.data();
+        if (b.time === time && b.status !== "Cancelled") {
+            isConflict = true;
+        }
+    });
+
+    if(isConflict) {
         return alert(`⚠️ 抱歉！${date} ${time} 這個時段已經有人預約了，請選擇其他時段。`);
     }
 
@@ -79,12 +91,11 @@ document.getElementById('bookBtn').onclick = async () => {
             service: service,
             date: date,
             time: time,
-            status: "Pending", // 預設為待確認
-            createdAt: new Date()
+            status: "Pending"
         });
         alert("🎉 預約成功！請等候櫃台人員確認。");
         fetchMyBookings();
-    } catch(e) { alert("失敗:" + e); }
+    } catch(e) { alert("預約失敗，請檢查連線: " + e); }
 };
 
 async function fetchMyBookings() {
@@ -95,6 +106,6 @@ async function fetchMyBookings() {
     snap.forEach(d => {
         const b = d.data();
         let badge = b.status === 'Pending' ? '#f39c12' : (b.status === 'Confirmed' ? '#3498db' : (b.status === 'CheckedIn' ? '#27ae60' : '#e74c3c'));
-        tbody.innerHTML += `<tr><td>${b.date} ${b.time}</td><td>${b.petName}</td><td><span class="status-badge" style="background:${badge}; color:white">${b.status}</span></td></tr>`;
+        tbody.innerHTML += `<tr><td>${b.date} ${b.time}</td><td>${b.petName}</td><td><span style="padding: 4px 10px; border-radius: 12px; background:${badge}; color:white; font-size:12px; font-weight:bold;">${b.status}</span></td></tr>`;
     });
 }

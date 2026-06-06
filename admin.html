@@ -4,77 +4,44 @@
     <meta charset="UTF-8">
     <title>汪喵管理系統 - 員工後台</title>
     <style>
-        body { font-family: sans-serif; background: #2c3e50; margin: 0; padding: 40px; }
-        .dashboard { background: white; border-radius: 15px; padding: 30px; max-width: 1000px; margin: auto; }
-        h1 { color: #2c3e50; display: flex; justify-content: space-between; }
-        .booking-card { border: 1px solid #eee; padding: 20px; border-radius: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        :root { color-scheme: light; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #2c3e50; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; }
+        .container { background-color: #ffffff; padding: 30px 40px; border-radius: 16px; width: 100%; max-width: 800px; }
+        h1, h2 { color: #2c3e50; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+
+        /* 登入區 */
+        .login-box { max-width: 400px; margin: auto; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #34495e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .back-link { display: block; margin-top: 20px; font-size: 14px; color: #3498db; text-decoration: none; }
+
+        /* 管理區 */
+        .hidden { display: none; }
+        .booking-card { border: 1px solid #eee; padding: 20px; border-radius: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; background: #fcfcfc;}
         .status-Pending { border-left: 5px solid #f39c12; }
         .status-Confirmed { border-left: 5px solid #3498db; }
         .status-CheckedIn { border-left: 5px solid #27ae60; }
-        select { padding: 8px; border-radius: 5px; }
-        .update-btn { padding: 8px 15px; background: #34495e; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .badge { padding: 5px 10px; border-radius: 5px; color: white; font-size: 12px; }
+        .status-Cancelled { border-left: 5px solid #e74c3c; opacity: 0.6; }
+        select.status-select { padding: 8px; border-radius: 5px; width: 180px; margin-right: 10px; border: 1px solid #ccc;}
+        .update-btn { padding: 8px 15px; width: auto; background: #27ae60; }
     </style>
 </head>
 <body>
-    <div class="dashboard">
-        <h1>🐾 預約狀態管理中心 <button onclick="location.href='index.html'" style="font-size:14px;">返回前台</button></h1>
-        <div id="bookingList">載入中...</div>
+    <div id="adminLoginSection" class="container login-box">
+        <h2>🔒 系統後台登入</h2>
+        <input type="password" id="adminPwd" placeholder="員工密碼 (輸入 admin123)">
+        <button id="adminLoginBtn">登入管理中心</button>
+        <a href="index.html" class="back-link">🔙 返回顧客首頁</a>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, updateDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <div id="adminDashboard" class="container hidden">
+        <h1 style="display: flex; justify-content: space-between; align-items: center;">
+            🐾 預約狀態管理中心
+            <button id="adminLogoutBtn" style="width: auto; background: #e74c3c; padding: 8px 15px; font-size: 14px;">登出</button>
+        </h1>
+        <div id="bookingList" style="margin-top: 20px;">資料載入中...</div>
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCBSj96SOqhiQgMjOHoku3ARM52FAp5qyg",
-            authDomain: "pet-system-609ed.firebaseapp.com",
-            projectId: "pet-system-609ed",
-            storageBucket: "pet-system-609ed.firebasestorage.app",
-            messagingSenderId: "1025593733737",
-            appId: "1:1025593733737:web:542bb4a633d6e88b0fe8f8"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        async function loadAdmin() {
-            const q = query(collection(db, "bookings"), orderBy("date", "desc"));
-            const snap = await getDocs(q);
-            const list = document.getElementById('bookingList');
-            list.innerHTML = '';
-
-            snap.forEach(d => {
-                const b = d.data();
-                const id = d.id;
-                list.innerHTML += `
-                    <div class="booking-card status-${b.status}">
-                        <div>
-                            <strong>${b.date} ${b.time}</strong> - ${b.petName} (${b.service}) <br>
-                            <small>飼主：${b.ownerId}</small>
-                        </div>
-                        <div>
-                            <select id="status-${id}">
-                                <option value="Pending" ${b.status==='Pending'?'selected':''}>待確認 (Pending)</option>
-                                <option value="Confirmed" ${b.status==='Confirmed'?'selected':''}>已收訂金 (Confirmed)</option>
-                                <option value="CheckedIn" ${b.status==='CheckedIn'?'selected':''}>已報到 (CheckedIn)</option>
-                                <option value="Cancelled" ${b.status==='Cancelled'?'selected':''}>取消 (Cancelled)</option>
-                            </select>
-                            <button class="update-btn" onclick="updateStatus('${id}')">更新狀態</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        window.updateStatus = async (id) => {
-            const newStatus = document.getElementById(`status-${id}`).value;
-            await updateDoc(doc(db, "bookings", id), { status: newStatus });
-            alert("狀態已更新！");
-            loadAdmin();
-        };
-
-        loadAdmin();
-    </script>
+    <script type="module" src="admin.js"></script>
 </body>
 </html>
