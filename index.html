@@ -7,7 +7,6 @@
         :root { --primary: #8b7355; --bg: #f9f6f0; --accent: #e67e22; }
         body { font-family: 'PingFang TC', sans-serif; background-color: var(--bg); margin: 0; padding: 0; }
 
-        /* 高級感廣告區 */
         .hero {
             background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1548191265-cc70d3d45ba1?q=80&w=2070&auto=format&fit=crop') center/cover;
             height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center;
@@ -27,12 +26,17 @@
         .btn:hover { background: #6e5c44; transform: translateY(-2px); }
         .btn-sec { background: #eee; color: #666; margin-top: 10px; }
 
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { text-align: left; padding: 12px; background: #fcfbf9; color: var(--primary); font-size: 14px; }
         td { padding: 12px; border-bottom: 1px solid #f9f6f0; font-size: 14px; vertical-align: middle; }
 
         .admin-entry { text-align: center; margin-top: 40px; font-size: 12px; color: #ccc; text-decoration: none; display: block; }
+
+        /* 加購區塊專用樣式 */
+        .addon-box { background: #ffffff; padding: 15px; border-radius: 10px; border: 1px dashed var(--primary); margin-top: 15px; }
+        .checkbox-label { display: flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; font-weight: normal; color: #333; }
+        .checkbox-label input { width: auto; transform: scale(1.2); cursor: pointer; }
     </style>
 </head>
 <body>
@@ -72,14 +76,16 @@
                     <label>寵物名字</label>
                     <input type="text" id="petNameInput" placeholder="例如: 糰子">
                 </div>
+
                 <div class="form-group">
                     <label>選擇服務</label>
                     <select id="serviceSelect">
-                        <option value="洗澡美容">洗澡美容 (Grooming)</option>
-                        <option value="星級住宿">星級住宿 (Boarding)</option>
+                        <option value="洗澡美容">🛁 洗澡美容 (Grooming)</option>
+                        <option value="星級住宿">🏨 星級住宿 (Boarding)</option>
                     </select>
                 </div>
-                <div style="display: flex; gap: 10px;">
+
+                <div id="groomingBox" style="display: flex; gap: 10px;">
                     <div class="form-group" style="flex: 1;">
                         <label>預約日期</label>
                         <input type="date" id="dateInput">
@@ -95,12 +101,42 @@
                         </select>
                     </div>
                 </div>
+
+                <div id="boardingBox" class="hidden">
+                    <div style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label>入住日 (Check-in)</label>
+                            <input type="date" id="startDateInput">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>退房日 (Check-out)</label>
+                            <input type="date" id="endDateInput">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>預期到店辦理手續時間</label>
+                        <select id="boardingTimeSelect">
+                            <option value="14:00">14:00 PM</option>
+                            <option value="15:00">15:00 PM</option>
+                            <option value="16:00">16:00 PM</option>
+                        </select>
+                    </div>
+
+                    <div class="addon-box">
+                        <label style="color: var(--primary); margin-bottom: 5px;">🎁 住宿專屬加購特惠：</label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="addOnGrooming">
+                            <span>加購「退房前精油頂級洗澡美容服務」（加購驚喜價 +$500）</span>
+                        </label>
+                    </div>
+                </div>
+
                 <button class="btn" id="bookBtn">立即送出預約</button>
             </div>
 
             <h3 style="margin-top: 40px; color: var(--primary);">📋 我的預約紀錄</h3>
             <table id="myRecords">
-                <thead><tr><th>時間</th><th>寵物</th><th>狀態</th><th>操作</th></tr></thead>
+                <thead><tr><th>預約時間</th><th>寵物與服務</th><th>狀態</th><th>操作</th></tr></thead>
                 <tbody id="myBookingsTable"></tbody>
             </table>
             <button class="btn btn-sec" id="logoutBtn">登出</button>

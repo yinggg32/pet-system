@@ -14,7 +14,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 let selectedDocId = null;
 
-// 登入防護
 document.getElementById('adminLoginBtn').onclick = () => {
     if (document.getElementById('adminPwd').value === 'admin123') {
         document.getElementById('adminLoginSection').classList.add('hidden');
@@ -32,7 +31,6 @@ document.getElementById('adminLogoutBtn').onclick = () => {
     document.getElementById('actionArea').classList.add('hidden');
 };
 
-// 載入所有資料
 async function loadAllData() {
     try {
         const snap = await getDocs(collection(db, "bookings"));
@@ -43,7 +41,7 @@ async function loadAllData() {
         table.innerHTML = '';
 
         if(snap.empty) {
-            table.innerHTML = '<tr><td colspan="5" style="text-align:center;">目前無任何資料</td></tr>';
+            table.innerHTML = '<tr><td colspan="4" style="text-align:center;">目前無任何資料</td></tr>';
             return;
         }
 
@@ -51,19 +49,23 @@ async function loadAllData() {
             const data = docSnap.data();
             const id = docSnap.id;
 
-            // 填入總表
             let color = data.status === 'Cancelled' ? '#e74c3c' : (data.status === 'CheckedIn' ? '#27ae60' : '#f39c12');
+
+            // 處理總表內服務與加購的合成字串
+            let serviceDetails = `<b>${data.service}</b>`;
+            if (data.addOn && data.addOn !== "無") {
+                serviceDetails += ` <span style="color:#e67e22; font-size:12px;">[${data.addOn}]</span>`;
+            }
+
             table.innerHTML += `<tr>
-                <td>${data.date} ${data.time}</td>
-                <td>${data.petName}</td>
-                <td>${data.ownerId}</td>
-                <td>${data.service}</td>
+                <td>${data.date}<br><small>${data.time}</small></td>
+                <td><b>${data.petName}</b><br><small>飼主:${data.ownerId}</small></td>
+                <td>${serviceDetails}</td>
                 <td style="color:${color}; font-weight:bold;">${data.status}</td>
             </tr>`;
 
-            // 填入下拉選單 (只顯示尚未結案的訂單)
             if (data.status === 'Pending' || data.status === 'Confirmed') {
-                select.innerHTML += `<option value="${id}">${data.date} ${data.time} - ${data.petName} (${data.service})</option>`;
+                select.innerHTML += `<option value="${id}">${data.date} - ${data.petName} (${data.service})</option>`;
             }
         });
     } catch (e) {
@@ -71,21 +73,25 @@ async function loadAllData() {
     }
 }
 
-// 讀取單筆資料
 document.getElementById('loadDetailsBtn').onclick = async () => {
     const id = document.getElementById('pendingSelect').value;
-    if (!id) return alert("請先從下拉選單選擇一張單子！");
+    if (!id) return alert("請先選擇一張單子！");
 
     selectedDocId = id;
     try {
         const docSnap = await getDoc(doc(db, "bookings", id));
         const data = docSnap.data();
 
+        // 在辦理手續的面板中，將主項目與加購細項特別標註（用紅字加粗提醒員工）
+        let addOnDisplay = data.addOn ? data.addOn : "無";
+        let addOnColor = addOnDisplay !== "無" ? "color:#e67e22; font-weight:bold;" : "color:#666;";
+
         document.getElementById('detailText').innerHTML = `
-            <strong>⏰ 預約時間：</strong>${data.date} ${data.time}<br>
-            <strong>🐶 寵物名字：</strong>${data.petName}<br>
-            <strong>🛁 服務項目：</strong>${data.service}<br>
-            <strong>📱 飼主電話：</strong>${data.ownerId}
+            <strong>⏰ 預約期間：</strong>${data.date} (報到時段: ${data.time})<br>
+            <strong>🐶 寵物名字：</strong><span style="font-size:16px; color:#2c3e50;"><b>${data.petName}</b></span><br>
+            <strong>🏨 主營服務：</strong>${data.service}<br>
+            <strong>🎁 附加加購項目：</strong><span style="${addOnColor}">${addOnDisplay}</span><br>
+            <strong>📱 飼主聯繫電話：</strong>${data.ownerId}
         `;
         document.getElementById('actionArea').classList.remove('hidden');
     } catch(e) {
@@ -93,18 +99,14 @@ document.getElementById('loadDetailsBtn').onclick = async () => {
     }
 };
 
-// 疫苗檢核與確認報到
 document.getElementById('checkInBtn').onclick = async () => {
     const vaccine = document.getElementById('vaccineStatus').value;
-
-    // Alt 判斷：疫苗過期
     if (vaccine === 'expired') {
-        alert("❌ 拒絕報到：疫苗已過期！(Reject Warning)");
+        alert("❌ 拒絕報到：安全核對失敗，該寵物疫苗已過期！(Reject Warning)");
     } else {
-        // Alt 判斷：疫苗有效
         try {
             await updateDoc(doc(db, "bookings", selectedDocId), { status: "CheckedIn" });
-            alert("✅ 報到成功！狀態已同步更新至資料庫。");
+            alert("✅ 辦理入住成功！手續已完成，毛孩狀態已變更為 [已入住 (CheckedIn)]。");
             document.getElementById('actionArea').classList.add('hidden');
             loadAllData();
         } catch(e) {
@@ -113,15 +115,14 @@ document.getElementById('checkInBtn').onclick = async () => {
     }
 };
 
-// 後台取消預約
 document.getElementById('cancelBtn').onclick = async () => {
-    if(!confirm("確定要取消此單嗎？")) return;
+    if(!confirm("確定要拒絕入住並取消此單嗎？")) return;
     try {
         await updateDoc(doc(db, "bookings", selectedDocId), { status: "Cancelled" });
         alert("單據已成功取消。");
         document.getElementById('actionArea').classList.add('hidden');
         loadAllData();
     } catch(e) {
-        alert("取消失敗：" + e.message);
+        alert("取消失敗：" + error.message);
     }
 };
