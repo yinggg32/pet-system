@@ -15,69 +15,6 @@ const db = getFirestore(app);
 let userPhone = null;
 
 // ────────────────────────────────────────────
-// 切換註冊 / 登入模式
-// ────────────────────────────────────────────
-document.getElementById('toggleRegBtn').onclick = () => {
-    document.getElementById('regFields').classList.toggle('hidden');
-    document.getElementById('registerBtn').classList.toggle('hidden');
-    document.getElementById('loginBtn').classList.toggle('hidden');
-    document.getElementById('toggleRegBtn').innerText = document.getElementById('regFields').classList.contains('hidden')
-        ? "還不是會員？我要註冊"
-        : "已有帳號？返回登入";
-};
-
-// ────────────────────────────────────────────
-// 寵物種類變更 → 動態過濾可用服務
-// ────────────────────────────────────────────
-document.getElementById('petTypeSelect').addEventListener('change', (e) => {
-    const allowedServices = e.target.selectedOptions[0].dataset.services;
-    const serviceSelect = document.getElementById('serviceSelect');
-
-    Array.from(serviceSelect.options).forEach(opt => {
-        if (opt.value === '洗澡美容') opt.hidden = !allowedServices.includes('grooming');
-        if (opt.value === '星級住宿') opt.hidden = !allowedServices.includes('boarding');
-    });
-
-    // 若目前選到的服務已被隱藏，自動切換到星級住宿
-    if (serviceSelect.selectedOptions[0].hidden) {
-        serviceSelect.value = '星級住宿';
-        document.getElementById('groomingBox').classList.add('hidden');
-        document.getElementById('boardingBox').classList.remove('hidden');
-    }
-});
-
-// ────────────────────────────────────────────
-// 服務種類切換（洗澡美容 / 星級住宿）
-// ────────────────────────────────────────────
-document.getElementById('serviceSelect').addEventListener('change', (e) => {
-    if (e.target.value === '星級住宿') {
-        document.getElementById('groomingBox').classList.add('hidden');
-        document.getElementById('boardingBox').classList.remove('hidden');
-    } else {
-        document.getElementById('groomingBox').classList.remove('hidden');
-        document.getElementById('boardingBox').classList.add('hidden');
-    }
-});
-
-// ────────────────────────────────────────────
-// 註冊
-// ────────────────────────────────────────────
-document.getElementById('registerBtn').onclick = async () => {
-    const phone = document.getElementById('phoneInput').value.trim();
-    const password = document.getElementById('passwordInput').value.trim();
-    const name = document.getElementById('nameInput').value.trim();
-
-    if (!phone || !name || !password) return alert("⚠️ 請填寫完整資料！");
-    try {
-        const docSnap = await getDoc(doc(db, "members", phone));
-        if (docSnap.exists()) return alert("❌ 此手機已註冊過，請直接登入！");
-        await setDoc(doc(db, "members", phone), { name, phone, password });
-        alert("🎉 註冊成功！系統將自動登入。");
-        doLogin(phone, name);
-    } catch (error) { alert("註冊失敗：" + error.message); }
-};
-
-// ────────────────────────────────────────────
 // 登入
 // ────────────────────────────────────────────
 document.getElementById('loginBtn').onclick = async () => {
@@ -95,11 +32,32 @@ document.getElementById('loginBtn').onclick = async () => {
     } catch (error) { alert("登入失敗：" + error.message); }
 };
 
+// ────────────────────────────────────────────
+// 註冊（新的 id：phoneInputReg, passwordInputReg）
+// ────────────────────────────────────────────
+document.getElementById('registerBtn').onclick = async () => {
+    const phone = document.getElementById('phoneInputReg').value.trim();
+    const password = document.getElementById('passwordInputReg').value.trim();
+    const name = document.getElementById('nameInput').value.trim();
+
+    if (!phone || !name || !password) return alert("⚠️ 請填寫完整資料！");
+    try {
+        const docSnap = await getDoc(doc(db, "members", phone));
+        if (docSnap.exists()) return alert("❌ 此手機已註冊過，請直接登入！");
+        await setDoc(doc(db, "members", phone), { name, phone, password });
+        alert("🎉 註冊成功！系統將自動登入。");
+        doLogin(phone, name);
+    } catch (error) { alert("註冊失敗：" + error.message); }
+};
+
+// ────────────────────────────────────────────
+// 登入後顯示 dashboard
+// ────────────────────────────────────────────
 function doLogin(phone, name) {
     userPhone = phone;
     document.getElementById('authSection').classList.add('hidden');
     document.getElementById('dashboardSection').classList.remove('hidden');
-    document.getElementById('userWelcome').innerText = `你好，${name}！`;
+    document.getElementById('userWelcome').innerText = `你好，${name} 🐾`;
     fetchMyBookings();
 }
 
@@ -113,6 +71,38 @@ document.getElementById('logoutBtn').onclick = () => {
     document.getElementById('authSection').classList.remove('hidden');
     document.getElementById('dashboardSection').classList.add('hidden');
 };
+
+// ────────────────────────────────────────────
+// 寵物種類變更 → 動態過濾可用服務
+// ────────────────────────────────────────────
+document.getElementById('petTypeSelect').addEventListener('change', (e) => {
+    const allowedServices = e.target.selectedOptions[0].dataset.services;
+    const serviceSelect = document.getElementById('serviceSelect');
+
+    Array.from(serviceSelect.options).forEach(opt => {
+        if (opt.value === '洗澡美容') opt.hidden = !allowedServices.includes('grooming');
+        if (opt.value === '星級住宿') opt.hidden = !allowedServices.includes('boarding');
+    });
+
+    if (serviceSelect.selectedOptions[0].hidden) {
+        serviceSelect.value = '星級住宿';
+        document.getElementById('groomingBox').classList.add('hidden');
+        document.getElementById('boardingBox').classList.remove('hidden');
+    }
+});
+
+// ────────────────────────────────────────────
+// 服務種類切換
+// ────────────────────────────────────────────
+document.getElementById('serviceSelect').addEventListener('change', (e) => {
+    if (e.target.value === '星級住宿') {
+        document.getElementById('groomingBox').classList.add('hidden');
+        document.getElementById('boardingBox').classList.remove('hidden');
+    } else {
+        document.getElementById('groomingBox').classList.remove('hidden');
+        document.getElementById('boardingBox').classList.add('hidden');
+    }
+});
 
 // ────────────────────────────────────────────
 // 送出預約
@@ -157,7 +147,7 @@ document.getElementById('bookBtn').onclick = async () => {
         if (b.time === finalTime && b.status !== "Cancelled") isConflict = true;
     });
 
-    if (isConflict) return alert(`⚠️ 抱歉！該日期的 ${finalTime} 這個時段已經客滿了，請選擇其他時段。`);
+    if (isConflict) return alert(`⚠️ 抱歉！該日期的 ${finalTime} 時段已客滿，請選擇其他時段。`);
 
     try {
         await addDoc(collection(db, "bookings"), {
@@ -186,37 +176,47 @@ async function fetchMyBookings() {
     const tbody = document.getElementById('myBookingsTable');
     tbody.innerHTML = '';
 
+    if (snap.empty) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#9a7b6a; padding:20px; font-size:13px;">目前尚無預約紀錄</td></tr>';
+        return;
+    }
+
+    const badgeColors = {
+        Pending:   { bg: '#fff3e0', color: '#e65100' },
+        Confirmed: { bg: '#e3f2fd', color: '#1565c0' },
+        CheckedIn: { bg: '#e8f5e9', color: '#2e7d32' },
+        Completed: { bg: '#f3e5f5', color: '#6a1b9a' },
+        Cancelled: { bg: '#ffebee', color: '#c62828' },
+    };
+
     snap.forEach(d => {
         const b = d.data();
         const docId = d.id;
-        let badge = b.status === 'Pending' ? '#f39c12'
-            : b.status === 'Confirmed' ? '#3498db'
-            : b.status === 'CheckedIn' ? '#27ae60'
-            : b.status === 'Completed' ? '#8e44ad'
-            : '#e74c3c';
+        const bc = badgeColors[b.status] || { bg: '#eee', color: '#333' };
 
         let actionBtn = '';
         if (b.status === 'Pending' || b.status === 'Confirmed') {
-            actionBtn = `<button onclick="cancelMyBooking('${docId}')" style="background: #e74c3c; color: white; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer;">取消</button>`;
+            actionBtn = `<button onclick="cancelMyBooking('${docId}')" style="background:none;border:1px solid #e74c3c;color:#e74c3c;padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;">取消</button>`;
         } else {
-            actionBtn = `<span style="color: #999; font-size: 12px;">無法操作</span>`;
+            actionBtn = `<span style="color:#ccc;font-size:12px;">—</span>`;
         }
 
         let serviceDisplay = b.service;
         if (b.addOn && b.addOn !== "無") {
-            serviceDisplay += ` <span style="color:var(--accent); font-size:12px;">[${b.addOn}]</span>`;
+            serviceDisplay += `<br><span style="color:#c8956c; font-size:11px;">[${b.addOn}]</span>`;
         }
 
         tbody.innerHTML += `
             <tr>
-                <td style="font-size: 12px; line-height: 1.4;">${b.date}<br><b>${b.time}</b></td>
+                <td style="line-height:1.6;">${b.date}<br><b style="font-size:13px;">${b.time}</b></td>
                 <td>
                     <b>${b.petName}</b>
-                    <span style="font-size:12px; color:#888;">${b.petType || ''}</span>
-                    <br>
-                    <span style="font-size: 12px; color:#666;">${serviceDisplay}</span>
+                    <span style="font-size:11px; color:#9a7b6a; margin-left:4px;">${b.petType || ''}</span>
+                    <br><span style="font-size:12px; color:#9a7b6a;">${serviceDisplay}</span>
                 </td>
-                <td><span style="padding: 4px 10px; border-radius: 12px; background:${badge}; color:white; font-size:12px; font-weight:bold;">${b.status}</span></td>
+                <td>
+                    <span class="badge" style="background:${bc.bg}; color:${bc.color};">${b.status}</span>
+                </td>
                 <td>${actionBtn}</td>
             </tr>`;
     });

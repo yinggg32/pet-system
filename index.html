@@ -2,160 +2,705 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>汪喵精品旅館 - 顧客預約中心</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汪喵精品旅館 — 給毛孩最好的</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #8b7355; --bg: #f9f6f0; --accent: #e67e22; }
-        body { font-family: 'PingFang TC', sans-serif; background-color: var(--bg); margin: 0; padding: 0; }
-
-        .hero {
-            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1548191265-cc70d3d45ba1?q=80&w=2070&auto=format&fit=crop') center/cover;
-            height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center;
+        :root {
+            --brown:   #3d2b1f;
+            --mocha:   #6b4c3b;
+            --caramel: #c8956c;
+            --cream:   #fdf6ee;
+            --warm:    #f5ece0;
+            --accent:  #e07b39;
+            --text:    #2a1a10;
+            --muted:   #9a7b6a;
         }
-        .hero h1 { font-size: 36px; margin: 0; letter-spacing: 2px; }
-        .hero p { font-size: 18px; opacity: 0.9; }
 
-        .container { max-width: 600px; margin: -50px auto 50px; background: white; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); padding: 40px; position: relative; z-index: 2; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        h2 { color: var(--primary); border-bottom: 2px solid #f0e9df; padding-bottom: 15px; font-size: 22px; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Noto Serif TC', serif;
+            background: var(--cream);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* ── NAVBAR ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 22px 60px;
+            background: rgba(61,43,31,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(200,149,108,0.2);
+        }
+        .nav-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px; color: var(--cream);
+            letter-spacing: 2px;
+        }
+        .nav-logo span { color: var(--caramel); font-style: italic; }
+        .nav-links { display: flex; gap: 36px; list-style: none; }
+        .nav-links a {
+            color: rgba(253,246,238,0.75);
+            text-decoration: none; font-size: 14px;
+            letter-spacing: 1px; transition: color 0.3s;
+        }
+        .nav-links a:hover { color: var(--caramel); }
+        .nav-cta {
+            background: var(--caramel); color: var(--brown);
+            border: none; padding: 10px 24px; border-radius: 30px;
+            font-family: 'Noto Serif TC', serif;
+            font-size: 14px; font-weight: 500;
+            cursor: pointer; transition: 0.3s; letter-spacing: 1px;
+        }
+        .nav-cta:hover { background: var(--accent); color: white; transform: translateY(-1px); }
+
+        /* ── HERO ── */
+        .hero {
+            height: 100vh; position: relative;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .hero-bg {
+            position: absolute; inset: 0;
+            background: url('https://images.unsplash.com/photo-1548191265-cc70d3d45ba1?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat;
+            transform: scale(1.05);
+            animation: heroZoom 12s ease-out forwards;
+        }
+        @keyframes heroZoom { to { transform: scale(1); } }
+        .hero-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(160deg, rgba(30,15,5,0.65) 0%, rgba(61,43,31,0.5) 60%, rgba(200,149,108,0.15) 100%);
+        }
+        .hero-content {
+            position: relative; text-align: center; color: white;
+            padding: 0 20px;
+            animation: fadeUp 1.2s ease both;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .hero-eyebrow {
+            font-size: 12px; letter-spacing: 5px; text-transform: uppercase;
+            color: var(--caramel); margin-bottom: 20px;
+            animation: fadeUp 1.2s 0.2s ease both;
+        }
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(44px, 7vw, 88px);
+            line-height: 1.1; margin-bottom: 24px;
+            animation: fadeUp 1.2s 0.35s ease both;
+        }
+        .hero h1 em { color: var(--caramel); font-style: italic; }
+        .hero-sub {
+            font-size: 16px; opacity: 0.85; letter-spacing: 1px;
+            margin-bottom: 44px; line-height: 1.8;
+            animation: fadeUp 1.2s 0.5s ease both;
+        }
+        .hero-btns {
+            display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+            animation: fadeUp 1.2s 0.65s ease both;
+        }
+        .btn-primary {
+            background: var(--caramel); color: var(--brown);
+            padding: 16px 40px; border-radius: 40px; border: none;
+            font-family: 'Noto Serif TC', serif; font-size: 15px; font-weight: 500;
+            cursor: pointer; transition: 0.3s; letter-spacing: 1px;
+            text-decoration: none; display: inline-block;
+        }
+        .btn-primary:hover { background: var(--accent); color: white; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(224,123,57,0.4); }
+        .btn-outline {
+            border: 1.5px solid rgba(255,255,255,0.5); color: white;
+            padding: 16px 40px; border-radius: 40px; background: transparent;
+            font-family: 'Noto Serif TC', serif; font-size: 15px;
+            cursor: pointer; transition: 0.3s; letter-spacing: 1px;
+            text-decoration: none; display: inline-block;
+        }
+        .btn-outline:hover { border-color: var(--caramel); color: var(--caramel); }
+        .hero-scroll {
+            position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+            color: rgba(255,255,255,0.5); font-size: 12px; letter-spacing: 3px;
+            text-transform: uppercase; animation: bounce 2s infinite;
+        }
+        @keyframes bounce { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(6px)} }
+
+        /* ── SECTION SHARED ── */
+        section { padding: 100px 60px; }
+        .section-label {
+            font-size: 11px; letter-spacing: 5px; text-transform: uppercase;
+            color: var(--caramel); margin-bottom: 16px;
+        }
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(32px, 4vw, 52px);
+            line-height: 1.2; color: var(--brown);
+        }
+        .section-title em { font-style: italic; color: var(--mocha); }
+
+        /* ── SERVICES ── */
+        .services { background: var(--warm); }
+        .services-inner { max-width: 1100px; margin: 0 auto; }
+        .services-header { text-align: center; margin-bottom: 60px; }
+        .services-header p { color: var(--muted); margin-top: 16px; font-size: 15px; line-height: 1.8; }
+        .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+
+        .service-card {
+            background: white; border-radius: 20px; overflow: hidden;
+            box-shadow: 0 4px 20px rgba(61,43,31,0.06);
+            transition: transform 0.4s, box-shadow 0.4s;
+            cursor: pointer;
+        }
+        .service-card:hover { transform: translateY(-8px); box-shadow: 0 20px 50px rgba(61,43,31,0.14); }
+        .service-card-img {
+            height: 220px; object-fit: cover; width: 100%;
+            transition: transform 0.5s;
+        }
+        .service-card:hover .service-card-img { transform: scale(1.04); }
+        .service-card-img-wrap { overflow: hidden; }
+        .service-card-body { padding: 28px 30px 32px; }
+        .service-card-icon { font-size: 28px; margin-bottom: 12px; }
+        .service-card-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px; color: var(--brown); margin-bottom: 10px;
+        }
+        .service-card-desc { color: var(--muted); font-size: 14px; line-height: 1.9; margin-bottom: 20px; }
+        .service-price {
+            display: inline-block;
+            background: var(--warm); color: var(--mocha);
+            padding: 6px 18px; border-radius: 20px; font-size: 13px;
+            font-weight: 500; letter-spacing: 1px;
+        }
+
+        /* ── FEATURES ── */
+        .features { background: var(--brown); color: var(--cream); }
+        .features-inner { max-width: 1100px; margin: 0 auto; }
+        .features .section-label { color: var(--caramel); }
+        .features .section-title { color: var(--cream); margin-bottom: 60px; }
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+        .feature-item { text-align: center; }
+        .feature-icon {
+            font-size: 38px; margin-bottom: 18px;
+            display: block;
+        }
+        .feature-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px; margin-bottom: 10px; color: var(--caramel);
+        }
+        .feature-desc { font-size: 14px; line-height: 1.9; opacity: 0.75; }
+
+        /* ── TESTIMONIALS ── */
+        .testimonials { background: var(--cream); }
+        .testimonials-inner { max-width: 1100px; margin: 0 auto; }
+        .testimonials-header { text-align: center; margin-bottom: 60px; }
+        .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .testimonial-card {
+            background: white; border-radius: 16px; padding: 30px;
+            box-shadow: 0 2px 16px rgba(61,43,31,0.07);
+            position: relative;
+        }
+        .testimonial-card::before {
+            content: '"';
+            font-family: 'Playfair Display', serif;
+            font-size: 80px; color: var(--warm);
+            position: absolute; top: 10px; left: 20px; line-height: 1;
+        }
+        .testimonial-text { font-size: 14px; line-height: 1.9; color: var(--muted); margin-bottom: 20px; position: relative; z-index: 1; }
+        .testimonial-author { display: flex; align-items: center; gap: 12px; }
+        .testimonial-avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: var(--warm); display: flex; align-items: center; justify-content: center; font-size: 20px;
+        }
+        .testimonial-name { font-size: 14px; font-weight: 500; color: var(--brown); }
+        .testimonial-pet { font-size: 12px; color: var(--muted); }
+        .stars { color: var(--caramel); font-size: 13px; margin-bottom: 14px; }
+
+        /* ── BOOKING SECTION ── */
+        .booking-section { background: var(--warm); }
+        .booking-inner { max-width: 680px; margin: 0 auto; }
+        .booking-header { text-align: center; margin-bottom: 50px; }
+        .booking-header p { color: var(--muted); margin-top: 14px; font-size: 15px; }
+
+        .booking-card {
+            background: white; border-radius: 24px;
+            box-shadow: 0 8px 40px rgba(61,43,31,0.1); padding: 48px;
+        }
+
+        /* Auth tabs */
+        .auth-tabs { display: flex; gap: 0; margin-bottom: 30px; border-bottom: 2px solid var(--warm); }
+        .auth-tab {
+            padding: 12px 28px; cursor: pointer; font-size: 14px;
+            color: var(--muted); border-bottom: 2px solid transparent;
+            margin-bottom: -2px; transition: 0.2s; letter-spacing: 0.5px;
+            background: none; border-top: none; border-left: none; border-right: none;
+            font-family: 'Noto Serif TC', serif;
+        }
+        .auth-tab.active { color: var(--brown); border-bottom-color: var(--caramel); font-weight: 500; }
+
         .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: 600; margin-bottom: 8px; color: #555; font-size: 14px; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; transition: 0.3s; box-sizing: border-box; }
-        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 8px rgba(139, 115, 85, 0.2); }
+        .form-label {
+            display: block; font-size: 12px; font-weight: 500;
+            letter-spacing: 1px; text-transform: uppercase;
+            color: var(--muted); margin-bottom: 8px;
+        }
+        .form-input {
+            width: 100%; padding: 14px 16px;
+            border: 1.5px solid #e8ddd4; border-radius: 12px;
+            font-family: 'Noto Serif TC', serif; font-size: 15px;
+            color: var(--text); background: var(--cream);
+            transition: 0.3s; outline: none;
+        }
+        .form-input:focus { border-color: var(--caramel); background: white; box-shadow: 0 0 0 3px rgba(200,149,108,0.12); }
+        .form-row { display: flex; gap: 16px; }
+        .form-row .form-group { flex: 1; }
 
-        .btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px;}
-        .btn:hover { background: #6e5c44; transform: translateY(-2px); }
-        .btn-sec { background: #eee; color: #666; margin-top: 10px; }
+        .submit-btn {
+            width: 100%; padding: 16px;
+            background: var(--brown); color: var(--cream);
+            border: none; border-radius: 12px;
+            font-family: 'Noto Serif TC', serif;
+            font-size: 16px; font-weight: 500; letter-spacing: 1px;
+            cursor: pointer; transition: 0.3s; margin-top: 8px;
+        }
+        .submit-btn:hover { background: var(--mocha); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(61,43,31,0.25); }
+        .submit-btn.secondary { background: var(--warm); color: var(--mocha); margin-top: 10px; }
+        .submit-btn.secondary:hover { background: #ecddd0; box-shadow: none; }
 
+        .addon-box {
+            background: var(--warm); padding: 16px 18px;
+            border-radius: 12px; border: 1.5px dashed var(--caramel);
+            margin-top: 4px;
+        }
+        .addon-label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; color: var(--text); }
+        .addon-label input { width: auto; accent-color: var(--caramel); transform: scale(1.2); }
+
+        /* Records table */
+        .records-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .records-table th { text-align: left; padding: 10px 12px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); border-bottom: 1.5px solid var(--warm); }
+        .records-table td { padding: 12px; border-bottom: 1px solid var(--warm); font-size: 13px; vertical-align: middle; }
+
+        .badge {
+            display: inline-block; padding: 3px 12px; border-radius: 20px;
+            font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+        }
+
+        .section-divider { text-align: center; padding: 20px 0 30px; }
+        .section-divider span { font-size: 22px; opacity: 0.3; }
+
+        /* ── FOOTER ── */
+        footer {
+            background: var(--brown); color: var(--cream);
+            padding: 60px 60px 40px;
+        }
+        .footer-inner { max-width: 1100px; margin: 0 auto; }
+        .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 60px; margin-bottom: 50px; }
+        .footer-brand-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 26px; margin-bottom: 14px;
+        }
+        .footer-brand-name span { color: var(--caramel); font-style: italic; }
+        .footer-desc { font-size: 13px; opacity: 0.6; line-height: 1.9; }
+        .footer-col-title { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--caramel); margin-bottom: 18px; }
+        .footer-links { list-style: none; }
+        .footer-links li { margin-bottom: 10px; }
+        .footer-links a { color: rgba(253,246,238,0.65); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+        .footer-links a:hover { color: var(--caramel); }
+        .footer-bottom { border-top: 1px solid rgba(200,149,108,0.2); padding-top: 24px; display: flex; justify-content: space-between; align-items: center; }
+        .footer-copy { font-size: 12px; opacity: 0.4; }
+        .footer-admin { font-size: 11px; color: rgba(253,246,238,0.3); text-decoration: none; letter-spacing: 1px; }
+        .footer-admin:hover { color: var(--caramel); }
+
+        /* ── LINE FLOAT BTN ── */
+        .line-float {
+            position: fixed; bottom: 32px; right: 32px; z-index: 200;
+            width: 58px; height: 58px; border-radius: 50%;
+            background: #06C755; box-shadow: 0 4px 20px rgba(6,199,85,0.4);
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none; transition: 0.3s;
+            animation: popIn 0.6s 1.5s cubic-bezier(0.175,0.885,0.32,1.275) both;
+        }
+        @keyframes popIn { from{opacity:0;transform:scale(0)} to{opacity:1;transform:scale(1)} }
+        .line-float:hover { transform: scale(1.1); box-shadow: 0 8px 30px rgba(6,199,85,0.5); }
+        .line-float svg { width: 32px; height: 32px; fill: white; }
+        .line-tooltip {
+            position: absolute; right: 68px; top: 50%; transform: translateY(-50%);
+            background: var(--brown); color: var(--cream);
+            padding: 6px 14px; border-radius: 8px; font-size: 12px;
+            white-space: nowrap; opacity: 0; pointer-events: none; transition: 0.2s;
+        }
+        .line-float:hover .line-tooltip { opacity: 1; }
+
+        /* ── HIDDEN ── */
         .hidden { display: none !important; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { text-align: left; padding: 12px; background: #fcfbf9; color: var(--primary); font-size: 14px; }
-        td { padding: 12px; border-bottom: 1px solid #f9f6f0; font-size: 14px; vertical-align: middle; }
 
-        .admin-entry { text-align: center; margin-top: 40px; font-size: 12px; color: #ccc; text-decoration: none; display: block; }
-
-        /* 加購區塊專用樣式 */
-        .addon-box { background: #ffffff; padding: 15px; border-radius: 10px; border: 1px dashed var(--primary); margin-top: 15px; }
-        .checkbox-label { display: flex; align-items: center; gap: 10px; margin: 0; cursor: pointer; font-weight: normal; color: #333; }
-        .checkbox-label input { width: auto; transform: scale(1.2); cursor: pointer; }
+        /* ── SCROLL REVEAL ── */
+        .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s, transform 0.7s; }
+        .reveal.visible { opacity: 1; transform: none; }
     </style>
 </head>
 <body>
-    <div class="hero">
-        <h1>給毛孩最好的度假體驗</h1>
-        <p>專業美容・星級住宿・全方位照護</p>
-    </div>
 
-    <div class="container">
-        <div id="authSection">
-            <h2>會員登入 / 快速註冊</h2>
-            <div class="form-group">
-                <label>手機號碼 (登入帳號)</label>
-                <input type="text" id="phoneInput" placeholder="請輸入您的手機">
-            </div>
-            <div class="form-group">
-                <label>密碼 (Password)</label>
-                <input type="password" id="passwordInput" placeholder="請輸入密碼">
-            </div>
-            <div id="regFields" class="hidden">
-                <div class="form-group">
-                    <label>飼主姓名</label>
-                    <input type="text" id="nameInput" placeholder="請輸入姓名 (僅註冊需要)">
+<!-- NAVBAR -->
+<nav>
+    <div class="nav-logo">汪喵<span>精品旅館</span></div>
+    <ul class="nav-links">
+        <li><a href="#services">服務項目</a></li>
+        <li><a href="#features">我們的特色</a></li>
+        <li><a href="#testimonials">顧客評價</a></li>
+        <li><a href="#booking">線上預約</a></li>
+    </ul>
+    <button class="nav-cta" onclick="document.getElementById('booking').scrollIntoView({behavior:'smooth'})">立即預約</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <p class="hero-eyebrow">Luxury Pet Hotel · Since 2020</p>
+        <h1>給毛孩最好的<br><em>度假體驗</em></h1>
+        <p class="hero-sub">專業美容・星級住宿・24小時全方位照護<br>讓您安心出行，毛孩快樂留宿</p>
+        <div class="hero-btns">
+            <a href="#booking" class="btn-primary">立即線上預約</a>
+            <a href="#services" class="btn-outline">探索服務項目</a>
+        </div>
+    </div>
+    <div class="hero-scroll">▼ &nbsp; scroll</div>
+</section>
+
+<!-- SERVICES -->
+<section class="services" id="services">
+    <div class="services-inner">
+        <div class="services-header reveal">
+            <p class="section-label">Our Services</p>
+            <h2 class="section-title">為您的毛孩量身打造<br><em>每一種呵護</em></h2>
+            <p>從洗澡美容到星級住宿，我們提供最細心的寵物照護服務</p>
+        </div>
+        <div class="services-grid reveal">
+            <div class="service-card">
+                <div class="service-card-img-wrap">
+                    <img class="service-card-img" src="grooming.png" alt="洗澡美容">
+                </div>
+                <div class="service-card-body">
+                    <div class="service-card-icon">🛁</div>
+                    <div class="service-card-title">洗澡美容</div>
+                    <p class="service-card-desc">採用頂級天然精油沐浴產品，由專業美容師一對一服務。包含全身清洗、吹整造型、修剪指甲、清耳等完整護理。</p>
+                    <span class="service-price">🐕 狗狗 從 $800 起　🐈 貓咪 從 $600 起</span>
                 </div>
             </div>
-            <button class="btn" id="loginBtn">立即登入</button>
-            <button class="btn btn-sec" id="toggleRegBtn">還不是會員？我要註冊</button>
-            <button class="btn hidden" id="registerBtn">確認註冊</button>
+            <div class="service-card">
+                <div class="service-card-img-wrap">
+                    <img class="service-card-img" src="boarding.png" alt="星級住宿">
+                </div>
+                <div class="service-card-body">
+                    <div class="service-card-icon">🏨</div>
+                    <div class="service-card-title">星級住宿</div>
+                    <p class="service-card-desc">獨立溫控空調套房，每日三餐定時餵食、陪玩互動。24小時監控，讓您出遊放心，毛孩住得舒適安心。</p>
+                    <span class="service-price">每晚從 $800 起，提供加購退房美容</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+    <div class="features-inner">
+        <div style="text-align:center; margin-bottom: 60px;" class="reveal">
+            <p class="section-label">Why Choose Us</p>
+            <h2 class="section-title">我們的<em>承諾</em></h2>
+        </div>
+        <div class="features-grid reveal">
+            <div class="feature-item">
+                <span class="feature-icon">🎥</span>
+                <div class="feature-title">24小時即時監控</div>
+                <p class="feature-desc">全館 CCTV 全天候錄影，您隨時可以透過 LINE 向我們索取即時畫面，讓您放心出遊。</p>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">🏥</span>
+                <div class="feature-title">獸醫合作保障</div>
+                <p class="feature-desc">與在地動物醫院緊急合作，毛孩如有任何不適，第一時間通報飼主並安排就診。</p>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">🌿</span>
+                <div class="feature-title">天然無毒環境</div>
+                <p class="feature-desc">全館使用寵物安全清潔劑，定時消毒，確保每位毛孩都在最乾淨安全的環境中生活。</p>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">🍽️</span>
+                <div class="feature-title">客製化餐食</div>
+                <p class="feature-desc">依照飼主指示提供自帶飼料或旅館菜單，支援過敏體質或特殊飲食需求的毛孩。</p>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">🛡️</span>
+                <div class="feature-title">疫苗安全審核</div>
+                <p class="feature-desc">入住前嚴格核對疫苗紀錄，確保館內所有毛孩相互安全，打造無憂的住宿環境。</p>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon">📱</span>
+                <div class="feature-title">即時動態回報</div>
+                <p class="feature-desc">每日透過 LINE 傳送毛孩的照片與生活動態，讓您就算出差在外也能第一時間掌握狀況。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials" id="testimonials">
+    <div class="testimonials-inner">
+        <div class="testimonials-header reveal">
+            <p class="section-label">Customer Reviews</p>
+            <h2 class="section-title">毛爸媽們<em>怎麼說</em></h2>
+        </div>
+        <div class="testimonials-grid reveal">
+            <div class="testimonial-card">
+                <div class="stars">★★★★★</div>
+                <p class="testimonial-text">把柴柴糰子交給汪喵真的超放心！每天都收到照片和影片，出差整趟都不用擔心，下次出遊一定還會來。</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">🧑</div>
+                    <div>
+                        <div class="testimonial-name">陳小姐</div>
+                        <div class="testimonial-pet">柴犬糰子的媽媽</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="stars">★★★★★</div>
+                <p class="testimonial-text">我家貓咪超級怕生，原本很擔心，但員工超有耐心，住宿三天回來還胖了一點點，哈哈！服務真的沒話說。</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">👨</div>
+                    <div>
+                        <div class="testimonial-name">林先生</div>
+                        <div class="testimonial-pet">英短拿鐵的爸爸</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="stars">★★★★★</div>
+                <p class="testimonial-text">加購退房前的精油美容真的超值！帶走的時候毛毛亮亮的，還香了好幾天，整個就是貴婦待遇，強力推薦！</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">🧑</div>
+                    <div>
+                        <div class="testimonial-name">王媽媽</div>
+                        <div class="testimonial-pet">貴賓狗妞妞的媽媽</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- BOOKING -->
+<section class="booking-section" id="booking">
+    <div class="booking-inner">
+        <div class="booking-header reveal">
+            <p class="section-label">Online Booking</p>
+            <h2 class="section-title">立即<em>線上預約</em></h2>
+            <p>登入或快速註冊成為會員，即可開始預約服務</p>
         </div>
 
-        <div id="dashboardSection" class="hidden">
-            <h2 id="userWelcome">歡迎回家的毛爸媽</h2>
+        <div class="booking-card reveal">
 
-            <div style="background: #fff9f2; padding: 20px; border-radius: 15px; border: 1px solid #ffe8d1;">
-                <h3 style="margin-top:0; font-size: 16px;">✨ 線上預約服務</h3>
-
-                <div class="form-group">
-                    <label>寵物名字</label>
-                    <input type="text" id="petNameInput" placeholder="例如: 糰子">
+            <!-- AUTH -->
+            <div id="authSection">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">會員登入</button>
+                    <button class="auth-tab" id="tabReg" onclick="switchTab('reg')">快速註冊</button>
                 </div>
 
-                <div class="form-group">
-                    <label>寵物種類</label>
-                    <select id="petTypeSelect">
-                        <option value="🐕 狗" data-services="grooming,boarding">🐕 狗 (Dog)</option>
-                        <option value="🐈 貓" data-services="grooming,boarding">🐈 貓 (Cat)</option>
-                        <option value="🐹 倉鼠" data-services="boarding">🐹 倉鼠 (Hamster)</option>
-                        <option value="🐰 兔子" data-services="boarding">🐰 兔子 (Rabbit)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>選擇服務</label>
-                    <select id="serviceSelect">
-                        <option value="洗澡美容">🛁 洗澡美容 (Grooming)</option>
-                        <option value="星級住宿">🏨 星級住宿 (Boarding)</option>
-                    </select>
-                </div>
-
-                <div id="groomingBox" style="display: flex; gap: 10px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label>預約日期</label>
-                        <input type="date" id="dateInput">
+                <div id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">手機號碼</label>
+                        <input class="form-input" type="text" id="phoneInput" placeholder="請輸入您的手機號碼">
                     </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>預約時段</label>
-                        <select id="timeSelect">
-                            <option value="10:00">10:00 AM</option>
-                            <option value="11:00">11:00 AM</option>
-                            <option value="14:00">02:00 PM</option>
-                            <option value="15:00">03:00 PM</option>
-                            <option value="16:00">04:00 PM</option>
-                        </select>
+                    <div class="form-group">
+                        <label class="form-label">密碼</label>
+                        <input class="form-input" type="password" id="passwordInput" placeholder="請輸入密碼">
                     </div>
+                    <button class="submit-btn" id="loginBtn">登入會員中心</button>
                 </div>
 
-                <div id="boardingBox" class="hidden">
-                    <div style="display: flex; gap: 10px;">
-                        <div class="form-group" style="flex: 1;">
-                            <label>入住日 (Check-in)</label>
-                            <input type="date" id="startDateInput">
+                <div id="regForm" class="hidden">
+                    <div class="form-group">
+                        <label class="form-label">手機號碼</label>
+                        <input class="form-input" type="text" id="phoneInputReg" placeholder="請輸入您的手機號碼">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">飼主姓名</label>
+                        <input class="form-input" type="text" id="nameInput" placeholder="請輸入您的姓名">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">設定密碼</label>
+                        <input class="form-input" type="password" id="passwordInputReg" placeholder="請設定登入密碼">
+                    </div>
+                    <button class="submit-btn" id="registerBtn">建立會員帳號</button>
+                </div>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div id="dashboardSection" class="hidden">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:28px;">
+                    <div>
+                        <p id="userWelcome" style="font-family:'Playfair Display',serif; font-size:22px; color:var(--brown);"></p>
+                        <p style="font-size:13px; color:var(--muted); margin-top:4px;">歡迎回來，請預約您的毛孩服務</p>
+                    </div>
+                    <button id="logoutBtn" style="background:none;border:1.5px solid #e8ddd4;color:var(--muted);padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'Noto Serif TC',serif;">登出</button>
+                </div>
+
+                <!-- 預約表單 -->
+                <div style="background:var(--warm); padding:28px; border-radius:16px; margin-bottom:30px;">
+                    <p style="font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--caramel); margin-bottom:20px;">新增預約</p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">寵物名字</label>
+                            <input class="form-input" type="text" id="petNameInput" placeholder="例如：糰子">
                         </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>退房日 (Check-out)</label>
-                            <input type="date" id="endDateInput">
+                        <div class="form-group">
+                            <label class="form-label">寵物種類</label>
+                            <select class="form-input" id="petTypeSelect">
+                                <option value="🐕 狗" data-services="grooming,boarding">🐕 狗 (Dog)</option>
+                                <option value="🐈 貓" data-services="grooming,boarding">🐈 貓 (Cat)</option>
+                                <option value="🐹 倉鼠" data-services="boarding">🐹 倉鼠 (Hamster)</option>
+                                <option value="🐰 兔子" data-services="boarding">🐰 兔子 (Rabbit)</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label>預期到店辦理手續時間</label>
-                        <select id="boardingTimeSelect">
-                            <option value="14:00">14:00 PM</option>
-                            <option value="15:00">15:00 PM</option>
-                            <option value="16:00">16:00 PM</option>
+                        <label class="form-label">選擇服務</label>
+                        <select class="form-input" id="serviceSelect">
+                            <option value="洗澡美容">🛁 洗澡美容 (Grooming)</option>
+                            <option value="星級住宿">🏨 星級住宿 (Boarding)</option>
                         </select>
                     </div>
 
-                    <div class="addon-box">
-                        <label style="color: var(--primary); margin-bottom: 5px;">🎁 住宿專屬加購特惠：</label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="addOnGrooming">
-                            <span>加購「退房前精油頂級洗澡美容服務」（加購驚喜價 +$500）</span>
-                        </label>
+                    <!-- 洗澡美容 -->
+                    <div id="groomingBox">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">預約日期</label>
+                                <input class="form-input" type="date" id="dateInput">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">預約時段</label>
+                                <select class="form-input" id="timeSelect">
+                                    <option value="10:00">10:00 AM</option>
+                                    <option value="11:00">11:00 AM</option>
+                                    <option value="14:00">02:00 PM</option>
+                                    <option value="15:00">03:00 PM</option>
+                                    <option value="16:00">04:00 PM</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- 星級住宿 -->
+                    <div id="boardingBox" class="hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">入住日 Check-in</label>
+                                <input class="form-input" type="date" id="startDateInput">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">退房日 Check-out</label>
+                                <input class="form-input" type="date" id="endDateInput">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">預計到店時間</label>
+                            <select class="form-input" id="boardingTimeSelect">
+                                <option value="14:00">14:00 PM</option>
+                                <option value="15:00">15:00 PM</option>
+                                <option value="16:00">16:00 PM</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">加購服務</label>
+                            <div class="addon-box">
+                                <label class="addon-label">
+                                    <input type="checkbox" id="addOnGrooming">
+                                    <span>加購「退房前精油頂級洗澡美容」（加購驚喜價 +$500）</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="submit-btn" id="bookBtn">送出預約申請</button>
                 </div>
 
-                <button class="btn" id="bookBtn">立即送出預約</button>
+                <!-- 預約紀錄 -->
+                <div>
+                    <p style="font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--caramel); margin-bottom:16px;">我的預約紀錄</p>
+                    <table class="records-table">
+                        <thead><tr><th>日期 / 時段</th><th>寵物 / 服務</th><th>狀態</th><th></th></tr></thead>
+                        <tbody id="myBookingsTable"></tbody>
+                    </table>
+                </div>
             </div>
-
-            <h3 style="margin-top: 40px; color: var(--primary);">📋 我的預約紀錄</h3>
-            <table id="myRecords">
-                <thead><tr><th>預約時間</th><th>寵物與服務</th><th>狀態</th><th>操作</th></tr></thead>
-                <tbody id="myBookingsTable"></tbody>
-            </table>
-            <button class="btn btn-sec" id="logoutBtn">登出</button>
         </div>
-
-        <a href="admin.html" class="admin-entry">🛠️ 員工登入入口 (Admin Portal)</a>
     </div>
+</section>
 
-    <script type="module" src="customer.js"></script>
+<!-- FOOTER -->
+<footer>
+    <div class="footer-inner">
+        <div class="footer-top">
+            <div>
+                <div class="footer-brand-name">汪喵<span>精品旅館</span></div>
+                <p class="footer-desc">專為毛孩打造的五星級度假體驗。<br>我們深信每一隻毛孩都值得被最好的方式對待。</p>
+            </div>
+            <div>
+                <div class="footer-col-title">服務項目</div>
+                <ul class="footer-links">
+                    <li><a href="#services">洗澡美容</a></li>
+                    <li><a href="#services">星級住宿</a></li>
+                    <li><a href="#services">退房前美容加購</a></li>
+                </ul>
+            </div>
+            <div>
+                <div class="footer-col-title">聯絡我們</div>
+                <ul class="footer-links">
+                    <li><a href="#">LINE 官方帳號</a></li>
+                    <li><a href="#">Instagram</a></li>
+                    <li><a href="#">Facebook</a></li>
+                    <li><a href="#">0912-345-678</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span class="footer-copy">© 2024 汪喵精品旅館 · All Rights Reserved</span>
+            <a href="admin.html" class="footer-admin">Staff Portal →</a>
+        </div>
+    </div>
+</footer>
+
+<!-- LINE 浮動按鈕 -->
+<a href="https://line.me" target="_blank" class="line-float" title="LINE 客服">
+    <div class="line-tooltip">LINE 客服諮詢</div>
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+    </svg>
+</a>
+
+<script>
+    // ── Tab 切換 ──
+    function switchTab(tab) {
+        document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+        document.getElementById('regForm').classList.toggle('hidden', tab !== 'reg');
+        document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+        document.getElementById('tabReg').classList.toggle('active', tab === 'reg');
+    }
+
+    // ── Scroll Reveal ──
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+<script type="module" src="customer.js"></script>
 </body>
 </html>
