@@ -13,6 +13,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 let selectedDocId = null;
+
+// 後台發送系統訊息給顧客的輔助函式
+async function sendSystemMsg(ownerId, bookingId, text) {
+    try {
+        await addDoc(collection(db, "messages"), {
+            ownerId, bookingId: bookingId || "",
+            sender: "system", content: text,
+            createdAt: serverTimestamp(), read: false
+        });
+    } catch(e) { console.error("系統訊息發送失敗:", e); }
+}
+
+
 let allBookings   = []; // 快取，供搜尋用
 let allPets       = []; // 快取，供搜尋用
 
@@ -130,7 +143,12 @@ document.getElementById('searchInput').addEventListener('keyup', e => {
 window.quickConfirm = async (id) => {
     if (!confirm("確認接受此預約？")) return;
     try {
+        const bSnap = await getDoc(doc(db, "bookings", id));
+        const bData = bSnap.data();
         await updateDoc(doc(db, "bookings", id), { status: "Confirmed", confirmedAt: new Date().toISOString() });
+        await sendSystemMsg(bData.ownerId, id,
+            `✅ 您的預約已確認！\n服務：${bData.service}\n日期：${bData.date}（${bData.time}）\n寵物：${bData.petName}\n\n請準時到店，期待毛孩的到來 🐾`
+        );
         alert("✅ 已確認接受！顧客狀態更新為 Confirmed。");
         loadAllData();
     } catch(e) { alert("更新失敗：" + e.message); }
@@ -193,7 +211,12 @@ document.getElementById('loadDetailsBtn').onclick = async () => {
 // 確認接受（從詳情面板）
 document.getElementById('confirmBookingBtn').onclick = async () => {
     try {
+        const bSnap = await getDoc(doc(db, "bookings", selectedDocId));
+        const bData = bSnap.data();
         await updateDoc(doc(db, "bookings", selectedDocId), { status: "Confirmed", confirmedAt: new Date().toISOString() });
+        await sendSystemMsg(bData.ownerId, selectedDocId,
+            `✅ 您的預約已確認！\n服務：${bData.service}\n日期：${bData.date}（${bData.time}）\n寵物：${bData.petName}\n\n請準時到店，期待毛孩的到來 🐾`
+        );
         alert("✅ 已確認接受！顧客狀態更新為 Confirmed。");
         document.getElementById('actionArea').classList.add('hidden');
         loadAllData();
@@ -214,6 +237,10 @@ document.getElementById('checkInBtn').onclick = async () => {
 
         const newStatus = isGrooming ? "Completed" : "CheckedIn";
         await updateDoc(doc(db, "bookings", selectedDocId), { status: newStatus });
+        const msg = isGrooming
+            ? `🛁 ${data.petName} 的美容服務已完成！歡迎前來接毛孩回家 🐾`
+            : `🏨 ${data.petName} 已順利辦理入住！我們會好好照顧牠，有任何問題歡迎透過訊息聯繫。`;
+        await sendSystemMsg(data.ownerId, selectedDocId, msg);
         alert(isGrooming ? "✅ 美容服務已確認完成！" : "✅ 辦理入住成功！");
         document.getElementById('actionArea').classList.add('hidden');
         loadAllData();
@@ -224,7 +251,12 @@ document.getElementById('checkInBtn').onclick = async () => {
 document.getElementById('cancelBtn').onclick = async () => {
     if (!confirm("確定要取消此單嗎？")) return;
     try {
+        const bSnap = await getDoc(doc(db, "bookings", selectedDocId));
+        const bData = bSnap.data();
         await updateDoc(doc(db, "bookings", selectedDocId), { status: "Cancelled" });
+        await sendSystemMsg(bData.ownerId, selectedDocId,
+            `❌ 很抱歉，您的預約（${bData.service} / ${bData.date}）已被取消。\n如有疑問請透過訊息與我們聯繫，謝謝。`
+        );
         alert("單據已成功取消。");
         document.getElementById('actionArea').classList.add('hidden');
         loadAllData();
@@ -437,10 +469,18 @@ function renderAdminThread(ownerId) {
     thread.innerHTML = '';
     conv.msgs.forEach(m => {
         const timeStr = m.createdAt?.toDate ? m.createdAt.toDate().toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-        const cls = m.sender === 'customer' ? 'customer' : m.sender === 'admin' ? 'admin' : 'system';
+        // 員工後台：顧客訊息靠左，員工回覆靠右，系統訊息置中
+        let cls, label;
+        if (m.sender === 'customer') {
+            cls = 'customer'; label = '';
+        } else if (m.sender === 'admin') {
+            cls = 'admin'; label = '';
+        } else {
+            cls = 'system'; label = '';
+        }
         const bubble = document.createElement('div');
         bubble.className = `msg-bubble ${cls}`;
-        bubble.innerHTML = `<div style="white-space:pre-wrap;">${m.content}</div><div class="msg-meta">${timeStr}</div>`;
+        bubble.innerHTML = `${label}<div style="white-space:pre-wrap;">${m.content}</div><div class="msg-meta">${timeStr}</div>`;
         thread.appendChild(bubble);
     });
     thread.scrollTop = thread.scrollHeight;

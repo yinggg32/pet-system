@@ -61,6 +61,27 @@
         .pet-row-owner { font-size: 12px; color: #888; }
         .pet-row-info { font-size: 13px; color: #666; line-height: 1.8; }
         .allergy-flag { color: #e74c3c; font-weight: 600; }
+
+        /* 員工後台訊息氣泡方向（與顧客端相反） */
+        .msg-bubble { max-width: 75%; padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.7; word-break: break-word; }
+        .msg-bubble.customer {
+            /* 顧客訊息靠左 */
+            align-self: flex-start;
+            background: #ecf0f1; color: #2c3e50;
+            border-bottom-left-radius: 4px;
+        }
+        .msg-bubble.admin {
+            /* 員工回覆靠右 */
+            align-self: flex-end;
+            background: #27ae60; color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .msg-bubble.system {
+            align-self: center; background: #fdf6ee; color: #888;
+            font-size: 12px; border-radius: 10px; padding: 6px 14px;
+            max-width: 90%; text-align: center;
+        }
+        .msg-meta { font-size: 10px; opacity: 0.6; margin-top: 4px; }
         /* ── MESSAGES ── */
         .msg-panel { display: flex; gap: 0; height: 520px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
         .msg-sidebar { width: 220px; border-right: 1px solid #eee; overflow-y: auto; flex-shrink: 0; background: #f9f9f9; }
