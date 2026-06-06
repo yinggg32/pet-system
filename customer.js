@@ -310,44 +310,51 @@ window.cancelMyBooking = async (docId) => {
 // ════════════════════════════════════════════
 function subscribeMessages() {
     if (msgUnsubscribe) msgUnsubscribe();
+    // 不用 orderBy 避免需要複合索引，改為前端排序
     const q = query(
         collection(db, "messages"),
-        where("ownerId","==",userPhone),
-        orderBy("createdAt","asc")
+        where("ownerId","==",userPhone)
     );
     msgUnsubscribe = onSnapshot(q, (snap) => {
-        renderMessages(snap);
-        updateUnreadBadge(snap);
+        // 前端按 createdAt 排序
+        const sorted = [];
+        snap.forEach(d => sorted.push({ id: d.id, ...d.data() }));
+        sorted.sort((a, b) => {
+            const ta = a.createdAt?.seconds || 0;
+            const tb = b.createdAt?.seconds || 0;
+            return ta - tb;
+        });
+        renderMessagesSorted(sorted);
+        updateUnreadBadgeFromArray(sorted);
     }, (err) => console.error("訊息監聽失敗", err));
 }
 
-function renderMessages(snap) {
+function renderMessagesSorted(msgs) {
     const thread = document.getElementById('msgThread');
     if (!thread) return;
     thread.innerHTML = '';
-    if (snap.empty) {
+    if (msgs.length === 0) {
         thread.innerHTML = '<div class="msg-empty">目前沒有訊息<br><small>預約後系統將自動通知您</small></div>';
         return;
     }
-    snap.forEach(d => {
-        const m = d.data();
+    msgs.forEach(m => {
         const timeStr = m.createdAt?.toDate ? m.createdAt.toDate().toLocaleString('zh-TW', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+        // 顧客自己的訊息靠右，旅館/系統靠左
         const cls = m.sender === 'customer' ? 'customer' : m.sender === 'admin' ? 'admin' : 'system';
         const bubble = document.createElement('div');
         bubble.className = `msg-bubble ${cls}`;
-        bubble.innerHTML = `<div style="white-space:pre-wrap;">${m.content}</div><div class="msg-meta">${cls==='admin'?'🏨 旅館客服　':''} ${timeStr}</div>`;
+        const label = cls === 'admin' ? '<div style="font-size:10px;opacity:0.6;margin-bottom:3px;">🏨 旅館客服</div>' : '';
+        bubble.innerHTML = `${label}<div style="white-space:pre-wrap;">${m.content}</div><div class="msg-meta">${timeStr}</div>`;
         thread.appendChild(bubble);
     });
     thread.scrollTop = thread.scrollHeight;
 }
 
-function updateUnreadBadge(snap) {
+function updateUnreadBadgeFromArray(msgs) {
     const badge = document.getElementById('msgUnreadBadge');
     if (!badge) return;
-    // 目前訊息 tab 是否開著
     const isOpen = !document.getElementById('tabMessages')?.classList.contains('hidden');
-    let unread = 0;
-    snap.forEach(d => { if (!d.data().read && d.data().sender !== 'customer') unread++; });
+    const unread = msgs.filter(m => !m.read && m.sender !== 'customer').length;
     if (unread > 0 && !isOpen) {
         badge.textContent = unread;
         badge.classList.remove('hidden');
@@ -361,10 +368,10 @@ window.markMessagesRead = async () => {
     const badge = document.getElementById('msgUnreadBadge');
     if (badge) badge.classList.add('hidden');
     try {
-        const q = query(collection(db, "messages"), where("ownerId","==",userPhone), where("read","==",false));
+        const q = query(collection(db, "messages"), where("ownerId","==",userPhone));
         const snap = await getDocs(q);
         const promises = [];
-        snap.forEach(d => { if (d.data().sender !== 'customer') promises.push(updateDoc(doc(db,"messages",d.id),{read:true})); });
+        snap.forEach(d => { if (!d.data().read && d.data().sender !== 'customer') promises.push(updateDoc(doc(db,"messages",d.id),{read:true})); });
         await Promise.all(promises);
     } catch(e) { console.error(e); }
 };
