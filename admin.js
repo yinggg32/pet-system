@@ -246,7 +246,7 @@ window.deleteBooking = async (id) => {
 };
 
 // 批次清除 Cancelled + Completed
-document.getElementById('batchDeleteBtn').onclick = async () => {
+const batchBtn = document.getElementById('batchDeleteBtn'); if(batchBtn) batchBtn.onclick = async () => {
     const targets = allBookings.filter(b => b.status === 'Cancelled' || b.status === 'Completed');
     if (targets.length === 0) return alert("目前沒有可清除的紀錄（僅清除已取消／已完成的單據）。");
     if (!confirm(`確定要批次刪除 ${targets.length} 筆已取消／已完成的紀錄嗎？此操作無法還原。`)) return;
@@ -342,8 +342,9 @@ let currentChatOwner   = null;
 let allConversations   = {}; // ownerId -> { msgs, memberName, unread }
 
 async function initAdminMessages() {
-    // 訂閱所有訊息，即時更新
-    if (adminMsgUnsubscribe) return; // 已訂閱就不重複
+    if (adminMsgUnsubscribe) return;
+    try {
+    // 不加 where 條件，避免需要複合索引；改用前端排序
     const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
     adminMsgUnsubscribe = onSnapshot(q, (snap) => {
         // 重建對話群組
@@ -358,7 +359,8 @@ async function initAdminMessages() {
         renderAdminSidebar();
         if (currentChatOwner) renderAdminThread(currentChatOwner);
         updateAdminMsgBadge();
-    }, err => console.error("admin 訊息監聽失敗", err));
+    }, err => console.error("admin 訊息監聽失敗 - 可能需要 Firestore 複合索引:", err));
+    } catch(e) { console.error("initAdminMessages 失敗:", e); }
 }
 
 function updateAdminMsgBadge() {
@@ -397,7 +399,7 @@ async function renderAdminSidebar() {
     sidebar.innerHTML = sorted.map(ownerId => {
         const conv    = allConversations[ownerId];
         const last    = conv.msgs[conv.msgs.length - 1];
-        const preview = last ? last.content.slice(0,24).replace(/
+        const preview = last ? last.content.slice(0,24).split('\n').join(' ') + (last.content.length>24?'\u2026':'') : '';
 /g,' ') + (last.content.length>24?'…':'') : '';
         const badge   = conv.unread > 0 ? `<span class="msg-conv-badge">${conv.unread}</span>` : '';
         const active  = ownerId === currentChatOwner ? ' active' : '';
@@ -446,8 +448,8 @@ function renderAdminThread(ownerId) {
 }
 
 // 送出回覆
-document.getElementById('adminMsgSendBtn').onclick = adminSendMessage;
-document.getElementById('adminMsgInput').addEventListener('keydown', (e) => {
+const adminSendEl = document.getElementById('adminMsgSendBtn'); if(adminSendEl) adminSendEl.onclick = adminSendMessage;
+const adminInputEl = document.getElementById('adminMsgInput'); if(adminInputEl) adminInputEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); adminSendMessage(); }
 });
 
