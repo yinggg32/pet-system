@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, updateDoc, deleteDoc, doc, getDoc, setDoc, addDoc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCBSj96SOqhiQgMjOHoku3ARM52FAp5qyg",
@@ -20,14 +20,15 @@ let allPets       = []; // 快取，供搜尋用
 // Tab 切換
 // ════════════════════════════════════════════
 window.switchAdminTab = (tab) => {
-    ['Bookings','Pets','Settings'].forEach(t => {
+    ['Bookings','Pets','Messages','Settings'].forEach(t => {
         document.getElementById('adminTab'+t).classList.toggle('hidden', t.toLowerCase() !== tab);
     });
     document.querySelectorAll('.admin-tab').forEach((btn, i) => {
-        btn.classList.toggle('active', ['bookings','pets','settings'][i] === tab);
+        btn.classList.toggle('active', ['bookings','pets','messages','settings'][i] === tab);
     });
     if (tab === 'pets') loadAllPets();
     if (tab === 'settings') loadSettings();
+    if (tab === 'messages') initAdminMessages();
 };
 
 // ════════════════════════════════════════════
@@ -331,3 +332,134 @@ document.getElementById('saveSettingBtn').onclick = async () => {
         alert(`✅ 已儲存！住宿上限設定為 ${rooms} 間。`);
     } catch(e) { alert("儲存失敗：" + e.message); }
 };
+
+
+// ════════════════════════════════════════════
+// 後台訊息系統
+// ════════════════════════════════════════════
+let adminMsgUnsubscribe = null;
+let currentChatOwner   = null;
+let allConversations   = {}; // ownerId -> { msgs, memberName, unread }
+
+async function initAdminMessages() {
+    // 訂閱所有訊息，即時更新
+    if (adminMsgUnsubscribe) return; // 已訂閱就不重複
+    const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
+    adminMsgUnsubscribe = onSnapshot(q, (snap) => {
+        // 重建對話群組
+        allConversations = {};
+        snap.forEach(d => {
+            const m = d.data();
+            if (!m.ownerId) return;
+            if (!allConversations[m.ownerId]) allConversations[m.ownerId] = { msgs: [], unread: 0 };
+            allConversations[m.ownerId].msgs.push({ id: d.id, ...m });
+            if (!m.read && m.sender !== 'admin') allConversations[m.ownerId].unread++;
+        });
+        renderAdminSidebar();
+        if (currentChatOwner) renderAdminThread(currentChatOwner);
+        updateAdminMsgBadge();
+    }, err => console.error("admin 訊息監聽失敗", err));
+}
+
+function updateAdminMsgBadge() {
+    const badge = document.getElementById('adminMsgBadge');
+    if (!badge) return;
+    let total = 0;
+    Object.values(allConversations).forEach(c => { total += c.unread; });
+    if (total > 0) { badge.textContent = total; badge.style.display = 'inline-block'; }
+    else badge.style.display = 'none';
+}
+
+async function renderAdminSidebar() {
+    const sidebar = document.getElementById('adminMsgSidebar');
+    if (!sidebar) return;
+
+    // 查成員名字
+    const ownerIds = Object.keys(allConversations);
+    const nameMap  = {};
+    await Promise.all(ownerIds.map(async id => {
+        try {
+            const snap = await getDoc(doc(db, "members", id));
+            nameMap[id] = snap.exists() ? snap.data().name : id;
+        } catch(e) { nameMap[id] = id; }
+    }));
+
+    // 排序：有未讀的排前面
+    const sorted = ownerIds.sort((a,b) => {
+        const ua = allConversations[a].unread, ub = allConversations[b].unread;
+        if (ua !== ub) return ub - ua;
+        const ma = allConversations[a].msgs, mb = allConversations[b].msgs;
+        const ta = ma[ma.length-1]?.createdAt?.seconds || 0;
+        const tb = mb[mb.length-1]?.createdAt?.seconds || 0;
+        return tb - ta;
+    });
+
+    sidebar.innerHTML = sorted.map(ownerId => {
+        const conv    = allConversations[ownerId];
+        const last    = conv.msgs[conv.msgs.length - 1];
+        const preview = last ? last.content.slice(0,24).replace(/
+/g,' ') + (last.content.length>24?'…':'') : '';
+        const badge   = conv.unread > 0 ? `<span class="msg-conv-badge">${conv.unread}</span>` : '';
+        const active  = ownerId === currentChatOwner ? ' active' : '';
+        return `<div class="msg-conv-item${active}" onclick="openAdminChat('${ownerId}','${nameMap[ownerId]}')">
+            <div class="msg-conv-name">${nameMap[ownerId]}${badge}<br><small style="font-weight:400;color:#aaa;">${ownerId}</small></div>
+            <div class="msg-conv-preview">${preview}</div>
+        </div>`;
+    }).join('') || '<div style="padding:20px;color:#aaa;font-size:13px;text-align:center;">尚無顧客訊息</div>';
+}
+
+window.openAdminChat = async (ownerId, name) => {
+    currentChatOwner = ownerId;
+    document.getElementById('adminMsgHeader').textContent = `💬 ${name}（${ownerId}）`;
+    renderAdminThread(ownerId);
+    renderAdminSidebar();
+    // 標記已讀
+    const conv = allConversations[ownerId];
+    if (conv) {
+        const promises = conv.msgs
+            .filter(m => !m.read && m.sender !== 'admin')
+            .map(m => updateDoc(doc(db, "messages", m.id), { read: true }));
+        await Promise.all(promises);
+        allConversations[ownerId].unread = 0;
+        updateAdminMsgBadge();
+    }
+};
+
+function renderAdminThread(ownerId) {
+    const thread = document.getElementById('adminMsgThread');
+    if (!thread) return;
+    const conv = allConversations[ownerId];
+    if (!conv || conv.msgs.length === 0) {
+        thread.innerHTML = '<div class="msg-empty-state">此顧客尚無訊息</div>';
+        return;
+    }
+    thread.innerHTML = '';
+    conv.msgs.forEach(m => {
+        const timeStr = m.createdAt?.toDate ? m.createdAt.toDate().toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+        const cls = m.sender === 'customer' ? 'customer' : m.sender === 'admin' ? 'admin' : 'system';
+        const bubble = document.createElement('div');
+        bubble.className = `msg-bubble ${cls}`;
+        bubble.innerHTML = `<div style="white-space:pre-wrap;">${m.content}</div><div class="msg-meta">${timeStr}</div>`;
+        thread.appendChild(bubble);
+    });
+    thread.scrollTop = thread.scrollHeight;
+}
+
+// 送出回覆
+document.getElementById('adminMsgSendBtn').onclick = adminSendMessage;
+document.getElementById('adminMsgInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); adminSendMessage(); }
+});
+
+async function adminSendMessage() {
+    const input   = document.getElementById('adminMsgInput');
+    const content = input.value.trim();
+    if (!content || !currentChatOwner) return;
+    input.value = '';
+    try {
+        await addDoc(collection(db, "messages"), {
+            ownerId: currentChatOwner, sender: "admin",
+            content, createdAt: serverTimestamp(), read: false
+        });
+    } catch(e) { alert("訊息發送失敗：" + e.message); }
+}
