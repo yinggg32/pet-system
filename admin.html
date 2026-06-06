@@ -2,35 +2,74 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Pet System - Receptionist Check-in</title>
+    <title>Pet System - 工作人員後台</title>
     <style>
         :root { color-scheme: light; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f9f6f0; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { background-color: #ffffff; padding: 30px 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 500px; }
-        h2 { margin-top: 0; color: #5c4d43; font-size: 22px; border-bottom: 2px solid #f0e9df; padding-bottom: 10px; }
-        label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #666; }
-        input { width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; }
-        button.primary { width: 100%; padding: 12px; background-color: #8b7355; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
-        #resultArea p { margin: 8px 0; background-color: #fcfbf9; padding: 10px; border-left: 4px solid #8b7355; border-radius: 4px; }
-        h3 { margin-top: 30px; font-size: 16px; color: #5c4d43; border-bottom: 1px solid #f0e9df; padding-bottom: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; text-align: left; }
-        th { background-color: #f0e9df; padding: 8px; color: #5c4d43; }
-        td { padding: 8px; border-bottom: 1px solid #f9f6f0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #2c3e50; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; }
+        .container { background-color: #ffffff; padding: 30px 40px; border-radius: 16px; width: 100%; max-width: 600px; }
+        h2 { margin-top: 0; color: #2c3e50; font-size: 22px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #666; margin-top: 15px;}
+        input, select { width: 100%; box-sizing: border-box; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        button { width: 100%; padding: 12px; background-color: #34495e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 20px; }
+        button.action-btn { background-color: #27ae60; width: 48%; }
+        button.danger-btn { background-color: #e74c3c; width: 48%; }
+
+        .hidden { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; text-align: left; }
+        th { background-color: #ecf0f1; padding: 8px; color: #2c3e50; }
+        td { padding: 8px; border-bottom: 1px solid #f9f9f9; }
+        .back-link { display: block; text-align: center; margin-top: 25px; font-size: 13px; color: #3498db; text-decoration: none; }
+
+        .stat-box { background: #ecf0f1; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+        .stat-box span { font-size: 24px; font-weight: bold; color: #e67e22; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>🐾 櫃台報到系統</h2>
-        <label>輸入飼主編號 (Owner ID):</label>
-        <input type="text" id="ownerIdInput" placeholder="例如: O-123">
-        <button class="primary" onclick="searchBooking()">🔍 搜尋預約</button>
-        <div id="resultArea"></div>
-        <h3>📅 今日預約總表</h3>
-        <table>
-            <thead><tr><th>預約單號</th><th>寵物名</th><th>狀態</th></tr></thead>
-            <tbody id="tableBody"></tbody>
-        </table>
+        <div id="adminLoginSection">
+            <h2>🔒 系統後台登入</h2>
+            <label>員工密碼 (預設: admin123):</label>
+            <input type="password" id="adminPwd" placeholder="請輸入管理員密碼">
+            <button id="adminLoginBtn">登入後台</button>
+            <a href="index.html" class="back-link">🔙 返回顧客首頁</a>
+        </div>
+
+        <div id="adminDashboard" class="hidden">
+            <h2>🛠️ 櫃台報到管理系統</h2>
+
+            <div class="stat-box">
+                目前系統已註冊會員數：<span id="memberCount">0</span> 人
+            </div>
+
+            <label>快速選擇待處理預約單：</label>
+            <select id="bookingSelect">
+                <option value="">載入中...</option>
+            </select>
+            <button id="loadDetailsBtn">讀取資料</button>
+
+            <div id="actionArea" class="hidden" style="margin-top: 20px; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                <p id="detailText"></p>
+                <label>疫苗檢查：</label>
+                <select id="vaccineStatus">
+                    <option value="valid">✅ 有效</option>
+                    <option value="expired">❌ 過期</option>
+                </select>
+                <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                    <button id="checkInBtn" class="action-btn">✅ 確認報到</button>
+                    <button id="cancelBtn" class="danger-btn">❌ 取消預約</button>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px;">📅 系統全部紀錄總表</h3>
+            <table>
+                <thead><tr><th>單號</th><th>飼主帳號(手機)</th><th>寵物名</th><th>狀態</th></tr></thead>
+                <tbody id="allBookingsTable"></tbody>
+            </table>
+
+            <button id="adminLogoutBtn" style="background: #95a5a6; margin-top: 30px;">登出後台</button>
+        </div>
     </div>
-    <script src="admin.js"></script>
+
+    <script type="module" src="admin.js"></script>
 </body>
 </html>
