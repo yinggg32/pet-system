@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, getDocs, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 你的專屬 Firebase 金鑰
 const firebaseConfig = {
     apiKey: "AIzaSyCBSj96SOqhiQgMjOHoku3ARM52FAp5qyg",
     authDomain: "pet-system-609ed.firebaseapp.com",
@@ -15,14 +14,14 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 let selectedDocId = null;
 
-// 1. 登入防護
+// 登入防護
 document.getElementById('adminLoginBtn').onclick = () => {
     if (document.getElementById('adminPwd').value === 'admin123') {
         document.getElementById('adminLoginSection').classList.add('hidden');
         document.getElementById('adminDashboard').classList.remove('hidden');
         loadAllData();
     } else {
-        alert("密碼錯誤！");
+        alert("❌ 密碼錯誤！");
     }
 };
 
@@ -33,7 +32,7 @@ document.getElementById('adminLogoutBtn').onclick = () => {
     document.getElementById('actionArea').classList.add('hidden');
 };
 
-// 2. 載入所有資料庫資料
+// 載入所有資料
 async function loadAllData() {
     try {
         const snap = await getDocs(collection(db, "bookings"));
@@ -52,7 +51,7 @@ async function loadAllData() {
             const data = docSnap.data();
             const id = docSnap.id;
 
-            // 填入下方總表
+            // 填入總表
             let color = data.status === 'Cancelled' ? '#e74c3c' : (data.status === 'CheckedIn' ? '#27ae60' : '#f39c12');
             table.innerHTML += `<tr>
                 <td>${data.date} ${data.time}</td>
@@ -62,18 +61,17 @@ async function loadAllData() {
                 <td style="color:${color}; font-weight:bold;">${data.status}</td>
             </tr>`;
 
-            // 填入上方下拉選單 (只抓取還沒報到、也沒取消的單)
+            // 填入下拉選單 (只顯示尚未結案的訂單)
             if (data.status === 'Pending' || data.status === 'Confirmed') {
                 select.innerHTML += `<option value="${id}">${data.date} ${data.time} - ${data.petName} (${data.service})</option>`;
             }
         });
     } catch (e) {
-        console.error("載入失敗", e);
         alert("載入資料庫失敗：" + e.message);
     }
 }
 
-// 3. 讀取單一預約詳細資料
+// 讀取單筆資料
 document.getElementById('loadDetailsBtn').onclick = async () => {
     const id = document.getElementById('pendingSelect').value;
     if (!id) return alert("請先從下拉選單選擇一張單子！");
@@ -95,34 +93,34 @@ document.getElementById('loadDetailsBtn').onclick = async () => {
     }
 };
 
-// 4. 疫苗檢核與報到 (Sequence Diagram: alt block)
+// 疫苗檢核與確認報到
 document.getElementById('checkInBtn').onclick = async () => {
     const vaccine = document.getElementById('vaccineStatus').value;
 
-    // 如果疫苗過期 ➔ 觸發 Reject Warning
+    // Alt 判斷：疫苗過期
     if (vaccine === 'expired') {
         alert("❌ 拒絕報到：疫苗已過期！(Reject Warning)");
     } else {
-        // 如果疫苗有效 ➔ Update check-in status
+        // Alt 判斷：疫苗有效
         try {
             await updateDoc(doc(db, "bookings", selectedDocId), { status: "CheckedIn" });
             alert("✅ 報到成功！狀態已同步更新至資料庫。");
             document.getElementById('actionArea').classList.add('hidden');
-            loadAllData(); // 重新整理表格
+            loadAllData();
         } catch(e) {
             alert("更新失敗：" + e.message);
         }
     }
 };
 
-// 5. 取消預約 (State Diagram: Cancelled)
+// 後台取消預約
 document.getElementById('cancelBtn').onclick = async () => {
     if(!confirm("確定要取消此單嗎？")) return;
     try {
         await updateDoc(doc(db, "bookings", selectedDocId), { status: "Cancelled" });
         alert("單據已成功取消。");
         document.getElementById('actionArea').classList.add('hidden');
-        loadAllData(); // 重新整理表格
+        loadAllData();
     } catch(e) {
         alert("取消失敗：" + e.message);
     }
