@@ -1,20 +1,21 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, getDocs, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// 你的專屬 Firebase 金鑰
 const firebaseConfig = {
-  apiKey: "AIzaSyCBSj96SOqhiQgMjOHoku3ARM52FAp5qyg",
-  authDomain: "pet-system-609ed.firebaseapp.com",
-  projectId: "pet-system-609ed",
-  storageBucket: "pet-system-609ed.firebasestorage.app",
-  messagingSenderId: "1025593733737",
-  appId: "1:1025593733737:web:542bb4a633d6e88b0fe8f8"
+    apiKey: "AIzaSyCBSj96SOqhiQgMjOHoku3ARM52FAp5qyg",
+    authDomain: "pet-system-609ed.firebaseapp.com",
+    projectId: "pet-system-609ed",
+    storageBucket: "pet-system-609ed.firebasestorage.app",
+    messagingSenderId: "1025593733737",
+    appId: "1:1025593733737:web:542bb4a633d6e88b0fe8f8"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 let selectedDocId = null;
 
-// 員工簡單登入防護
+// 1. 登入防護
 document.getElementById('adminLoginBtn').onclick = () => {
     if (document.getElementById('adminPwd').value === 'admin123') {
         document.getElementById('adminLoginSection').classList.add('hidden');
@@ -29,68 +30,100 @@ document.getElementById('adminLogoutBtn').onclick = () => {
     document.getElementById('adminLoginSection').classList.remove('hidden');
     document.getElementById('adminDashboard').classList.add('hidden');
     document.getElementById('adminPwd').value = '';
+    document.getElementById('actionArea').classList.add('hidden');
 };
 
-// 載入後台所有資料
+// 2. 載入所有資料庫資料
 async function loadAllData() {
-    // 1. 計算會員總數
-    const membersSnap = await getDocs(collection(db, "members"));
-    document.getElementById('memberCount').innerText = membersSnap.size;
+    try {
+        const snap = await getDocs(collection(db, "bookings"));
+        const select = document.getElementById('pendingSelect');
+        const table = document.getElementById('allBookingsTable');
 
-    // 2. 載入所有預約單
-    const bookingsSnap = await getDocs(collection(db, "bookings"));
-    const select = document.getElementById('bookingSelect');
-    const table = document.getElementById('allBookingsTable');
-    
-    select.innerHTML = '<option value="">請選擇要處理的預約單...</option>';
-    table.innerHTML = '';
+        select.innerHTML = '<option value="">請選擇要處理的預約單...</option>';
+        table.innerHTML = '';
 
-    bookingsSnap.forEach(docSnap => {
-        const data = docSnap.data();
-        // 填入總表
-        let color = data.status === 'Cancelled' ? '#e74c3c' : (data.status === 'CheckedIn' ? '#27ae60' : '#f39c12');
-        table.innerHTML += `<tr><td>${data.bookingId}</td><td>${data.ownerId}</td><td>${data.petName}</td><td style="color:${color}; font-weight:bold;">${data.status}</td></tr>`;
-        
-        // 只有還沒處理完的單子，才放進下拉選單給員工選
-        if (data.status === 'Pending' || data.status === 'Confirmed') {
-            select.innerHTML += `<option value="${docSnap.id}">[單號: ${data.bookingId}] 寵物: ${data.petName} (飼主: ${data.ownerId})</option>`;
+        if(snap.empty) {
+            table.innerHTML = '<tr><td colspan="5" style="text-align:center;">目前無任何資料</td></tr>';
+            return;
         }
-    });
+
+        snap.forEach(docSnap => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+
+            // 填入下方總表
+            let color = data.status === 'Cancelled' ? '#e74c3c' : (data.status === 'CheckedIn' ? '#27ae60' : '#f39c12');
+            table.innerHTML += `<tr>
+                <td>${data.date} ${data.time}</td>
+                <td>${data.petName}</td>
+                <td>${data.ownerId}</td>
+                <td>${data.service}</td>
+                <td style="color:${color}; font-weight:bold;">${data.status}</td>
+            </tr>`;
+
+            // 填入上方下拉選單 (只抓取還沒報到、也沒取消的單)
+            if (data.status === 'Pending' || data.status === 'Confirmed') {
+                select.innerHTML += `<option value="${id}">${data.date} ${data.time} - ${data.petName} (${data.service})</option>`;
+            }
+        });
+    } catch (e) {
+        console.error("載入失敗", e);
+        alert("載入資料庫失敗：" + e.message);
+    }
 }
 
-// 讀取選定的單子詳情
+// 3. 讀取單一預約詳細資料
 document.getElementById('loadDetailsBtn').onclick = async () => {
-    const id = document.getElementById('bookingSelect').value;
+    const id = document.getElementById('pendingSelect').value;
     if (!id) return alert("請先從下拉選單選擇一張單子！");
-    
-    selectedDocId = id;
-    const docSnap = await getDoc(doc(db, "bookings", id));
-    const data = docSnap.data();
-    
-    document.getElementById('detailText').innerHTML = `
-        <strong>預約單號：</strong>${data.bookingId}<br>
-        <strong>寵物名字：</strong>${data.petName}<br>
-        <strong>服務項目：</strong>${data.service}
-    `;
-    document.getElementById('actionArea').classList.remove('hidden');
-};
 
-// 處理報到或取消
-document.getElementById('checkInBtn').onclick = async () => {
-    if (document.getElementById('vaccineStatus').value === 'expired') {
-        alert("❌ 疫苗已過期，系統拒絕報到！");
-    } else {
-        await updateDoc(doc(db, "bookings", selectedDocId), { status: "CheckedIn" });
-        alert("✅ 報到成功！資料庫已連動更新。");
-        document.getElementById('actionArea').classList.add('hidden');
-        loadAllData(); // 重新整理
+    selectedDocId = id;
+    try {
+        const docSnap = await getDoc(doc(db, "bookings", id));
+        const data = docSnap.data();
+
+        document.getElementById('detailText').innerHTML = `
+            <strong>⏰ 預約時間：</strong>${data.date} ${data.time}<br>
+            <strong>🐶 寵物名字：</strong>${data.petName}<br>
+            <strong>🛁 服務項目：</strong>${data.service}<br>
+            <strong>📱 飼主電話：</strong>${data.ownerId}
+        `;
+        document.getElementById('actionArea').classList.remove('hidden');
+    } catch(e) {
+        alert("讀取詳情失敗: " + e.message);
     }
 };
 
+// 4. 疫苗檢核與報到 (Sequence Diagram: alt block)
+document.getElementById('checkInBtn').onclick = async () => {
+    const vaccine = document.getElementById('vaccineStatus').value;
+
+    // 如果疫苗過期 ➔ 觸發 Reject Warning
+    if (vaccine === 'expired') {
+        alert("❌ 拒絕報到：疫苗已過期！(Reject Warning)");
+    } else {
+        // 如果疫苗有效 ➔ Update check-in status
+        try {
+            await updateDoc(doc(db, "bookings", selectedDocId), { status: "CheckedIn" });
+            alert("✅ 報到成功！狀態已同步更新至資料庫。");
+            document.getElementById('actionArea').classList.add('hidden');
+            loadAllData(); // 重新整理表格
+        } catch(e) {
+            alert("更新失敗：" + e.message);
+        }
+    }
+};
+
+// 5. 取消預約 (State Diagram: Cancelled)
 document.getElementById('cancelBtn').onclick = async () => {
     if(!confirm("確定要取消此單嗎？")) return;
-    await updateDoc(doc(db, "bookings", selectedDocId), { status: "Cancelled" });
-    alert("單據已取消。");
-    document.getElementById('actionArea').classList.add('hidden');
-    loadAllData();
+    try {
+        await updateDoc(doc(db, "bookings", selectedDocId), { status: "Cancelled" });
+        alert("單據已成功取消。");
+        document.getElementById('actionArea').classList.add('hidden');
+        loadAllData(); // 重新整理表格
+    } catch(e) {
+        alert("取消失敗：" + e.message);
+    }
 };

@@ -6,40 +6,72 @@
     <style>
         :root { color-scheme: light; }
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #2c3e50; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; }
-        .container { background-color: #ffffff; padding: 30px 40px; border-radius: 16px; width: 100%; max-width: 800px; }
+        .container { background-color: #ffffff; padding: 30px 40px; border-radius: 16px; width: 100%; max-width: 800px; box-sizing: border-box; }
         h1, h2 { color: #2c3e50; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
 
         /* 登入區 */
         .login-box { max-width: 400px; margin: auto; text-align: center; }
         input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background-color: #34495e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        button:hover { background-color: #2c3e50; }
         .back-link { display: block; margin-top: 20px; font-size: 14px; color: #3498db; text-decoration: none; }
 
         /* 管理區 */
         .hidden { display: none; }
-        .booking-card { border: 1px solid #eee; padding: 20px; border-radius: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; background: #fcfcfc;}
-        .status-Pending { border-left: 5px solid #f39c12; }
-        .status-Confirmed { border-left: 5px solid #3498db; }
-        .status-CheckedIn { border-left: 5px solid #27ae60; }
-        .status-Cancelled { border-left: 5px solid #e74c3c; opacity: 0.6; }
-        select.status-select { padding: 8px; border-radius: 5px; width: 180px; margin-right: 10px; border: 1px solid #ccc;}
-        .update-btn { padding: 8px 15px; width: auto; background: #27ae60; }
+        .action-panel { background: #f9f9f9; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eee; }
+        select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; margin-bottom: 10px; }
+
+        .update-btn { background-color: #27ae60; width: 48%; }
+        .danger-btn { background-color: #e74c3c; width: 48%; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; text-align: left; }
+        th { background-color: #ecf0f1; padding: 8px; color: #2c3e50; }
+        td { padding: 8px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
     <div id="adminLoginSection" class="container login-box">
         <h2>🔒 系統後台登入</h2>
-        <input type="password" id="adminPwd" placeholder="員工密碼 (輸入 admin123)">
+        <input type="password" id="adminPwd" placeholder="員工密碼 (請輸入 admin123)">
         <button id="adminLoginBtn">登入管理中心</button>
         <a href="index.html" class="back-link">🔙 返回顧客首頁</a>
     </div>
 
     <div id="adminDashboard" class="container hidden">
-        <h1 style="display: flex; justify-content: space-between; align-items: center;">
-            🐾 預約狀態管理中心
+        <h1 style="display: flex; justify-content: space-between; align-items: center; font-size: 24px;">
+            🐾 櫃台報到管理系統
             <button id="adminLogoutBtn" style="width: auto; background: #e74c3c; padding: 8px 15px; font-size: 14px;">登出</button>
         </h1>
-        <div id="bookingList" style="margin-top: 20px;">資料載入中...</div>
+
+        <div class="action-panel">
+            <h3 style="margin-top: 0;">1. 選擇待處理的預約單</h3>
+            <select id="pendingSelect">
+                <option value="">載入中...</option>
+            </select>
+            <button id="loadDetailsBtn">讀取預約資料</button>
+        </div>
+
+        <div id="actionArea" class="action-panel hidden" style="background:#fff9f2; border-color:#ffe8d1;">
+            <h3 style="margin-top: 0; color: #e67e22;">2. 執行報到手續</h3>
+            <div id="detailText" style="margin-bottom: 15px; line-height: 1.6; font-size: 15px;"></div>
+
+            <label style="font-weight: bold; color: #d35400;">🏥 疫苗檢查 (Vaccine Status)：</label>
+            <select id="vaccineStatus">
+                <option value="valid">✅ 疫苗有效 (Valid)</option>
+                <option value="expired">❌ 疫苗過期 (Expired)</option>
+            </select>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+                <button id="checkInBtn" class="update-btn">✅ 確認報到 (Check-in)</button>
+                <button id="cancelBtn" class="danger-btn">❌ 取消單據 (Cancel)</button>
+            </div>
+        </div>
+
+        <h3>📅 系統全部紀錄總表</h3>
+        <table>
+            <thead><tr><th>時間</th><th>寵物名</th><th>飼主電話</th><th>服務</th><th>狀態</th></tr></thead>
+            <tbody id="allBookingsTable"></tbody>
+        </table>
     </div>
 
     <script type="module" src="admin.js"></script>
