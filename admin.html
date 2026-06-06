@@ -5,29 +5,37 @@
     <title>汪喵管理系統 - 員工後台</title>
     <style>
         :root { color-scheme: light; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #2c3e50; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px 0; }
-        .container { background-color: #ffffff; padding: 30px 40px; border-radius: 16px; width: 100%; max-width: 800px; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #2c3e50; color: #333; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 30px 20px; }
+        .container { background-color: #ffffff; padding: 30px 40px; border-radius: 16px; width: 100%; max-width: 860px; box-sizing: border-box; }
         h1, h2 { color: #2c3e50; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
 
         .login-box { max-width: 400px; margin: auto; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        input[type="password"], input[type="text"] { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background-color: #34495e; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
         button:hover { background-color: #2c3e50; }
         .back-link { display: block; margin-top: 20px; font-size: 14px; color: #3498db; text-decoration: none; }
 
         .hidden { display: none; }
         .action-panel { background: #f9f9f9; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eee; }
-        select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; margin-bottom: 10px; }
+        select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-size: 15px; margin-bottom: 10px; }
 
-        .update-btn { background-color: #27ae60; width: 48%; }
-        .danger-btn { background-color: #e74c3c; width: 48%; }
+        .btn-row { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .confirm-btn  { background-color: #3498db; flex: 1; }
+        .update-btn   { background-color: #27ae60; flex: 1; }
+        .danger-btn   { background-color: #e74c3c; flex: 1; }
+        .confirm-btn:hover { background-color: #2980b9; }
+        .update-btn:hover  { background-color: #219a52; }
+        .danger-btn:hover  { background-color: #c0392b; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; text-align: left; }
-        th { background-color: #ecf0f1; padding: 8px; color: #2c3e50; }
-        td { padding: 8px; border-bottom: 1px solid #eee; }
+        th { background-color: #ecf0f1; padding: 10px 8px; color: #2c3e50; font-size: 12px; letter-spacing: 0.5px; }
+        td { padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+
+        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; }
     </style>
 </head>
 <body>
+    <!-- 登入 -->
     <div id="adminLoginSection" class="container login-box">
         <h2>🔒 系統後台登入</h2>
         <input type="password" id="adminPwd" placeholder="員工密碼 (請輸入 admin123)">
@@ -35,42 +43,61 @@
         <a href="index.html" class="back-link">🔙 返回顧客首頁</a>
     </div>
 
+    <!-- 後台主頁 -->
     <div id="adminDashboard" class="container hidden">
-        <h1 style="display: flex; justify-content: space-between; align-items: center; font-size: 24px;">
-            🐾 櫃台報到管理系統
-            <button id="adminLogoutBtn" style="width: auto; background: #e74c3c; padding: 8px 15px; font-size: 14px;">登出</button>
+        <h1 style="display:flex;justify-content:space-between;align-items:center;font-size:22px;">
+            🐾 汪喵精品旅館 — 櫃台管理系統
+            <button id="adminLogoutBtn" style="width:auto;background:#e74c3c;padding:8px 16px;font-size:13px;border-radius:8px;">登出</button>
         </h1>
 
+        <!-- Step 1: 選預約單 -->
         <div class="action-panel">
-            <h3 style="margin-top: 0;">1. 選擇待處理的預約單</h3>
+            <h3 style="margin-top:0;font-size:15px;">Step 1｜選擇要處理的預約單</h3>
             <select id="pendingSelect">
                 <option value="">載入中...</option>
             </select>
-            <button id="loadDetailsBtn">讀取預約資料</button>
+            <button id="loadDetailsBtn" style="background:#8b7355;">📋 讀取預約詳情</button>
         </div>
 
-        <div id="actionArea" class="action-panel hidden" style="background:#fff9f2; border-color:#ffe8d1;">
-            <h3 style="margin-top: 0; color: #e67e22;">2. 執行辦理手續</h3>
-            <div id="detailText" style="margin-bottom: 15px; line-height: 1.6; font-size: 15px;"></div>
+        <!-- Step 2: 辦理手續 -->
+        <div id="actionArea" class="action-panel hidden" style="background:#fff9f2;border-color:#ffe8d1;">
+            <h3 style="margin-top:0;color:#e67e22;font-size:15px;">Step 2｜辦理手續</h3>
+            <div id="detailText" style="margin-bottom:16px;line-height:1.8;font-size:14px;"></div>
 
-            <!-- 疫苗核對區塊：美容服務時自動隱藏 -->
+            <!-- 確認接受（Pending → Confirmed） -->
+            <div id="confirmSection" style="background:#eaf4fb;border:1px solid #aed6f1;border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+                <b style="color:#1a5276;font-size:14px;">📬 此預約尚未確認接受</b>
+                <p style="font-size:13px;color:#555;margin:6px 0 12px;">請先確認旅館可接受此預約，顧客將看到狀態變為 Confirmed（藍色）。</p>
+                <button id="confirmBookingBtn" class="confirm-btn" style="width:auto;padding:10px 28px;font-size:14px;">✅ 確認接受此預約</button>
+            </div>
+
+            <!-- 疫苗核對（住宿才顯示） -->
             <div id="vaccineSection">
-                <label style="font-weight: bold; color: #d35400;">🏥 現場安全核對—疫苗檢查 (Vaccine Status)：</label>
-                <select id="vaccineStatus">
+                <label style="font-weight:bold;color:#d35400;font-size:14px;">🏥 現場安全核對 — 疫苗檢查：</label>
+                <select id="vaccineStatus" style="margin-top:8px;">
                     <option value="valid">✅ 疫苗紀錄有效 (Valid)</option>
                     <option value="expired">❌ 疫苗過期、未齊全 (Expired)</option>
                 </select>
             </div>
 
-            <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+            <div class="btn-row">
                 <button id="checkInBtn" class="update-btn">✅ 確認核准並辦理入住</button>
                 <button id="cancelBtn" class="danger-btn">❌ 拒絕入住並取消單據</button>
             </div>
         </div>
 
-        <h3>📅 系統全體客戶紀錄總表</h3>
+        <!-- 全部紀錄總表 -->
+        <h3 style="margin-top:10px;">📅 全客戶預約紀錄總表</h3>
         <table>
-            <thead><tr><th>預約期間</th><th>寵物名 / 種類</th><th>服務項目 & 加購細項</th><th>狀態</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>預約期間</th>
+                    <th>寵物名 / 種類 / 飼主</th>
+                    <th>服務項目</th>
+                    <th>狀態</th>
+                    <th>快速操作</th>
+                </tr>
+            </thead>
             <tbody id="allBookingsTable"></tbody>
         </table>
     </div>
