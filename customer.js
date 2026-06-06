@@ -14,11 +14,10 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 let userPhone = null;
 
-// 美容固定時段數 / 住宿房間數從 settings 讀取
-const GROOMING_SLOTS  = ['10:00','11:00','14:00','15:00','16:00'];
-let   BOARDING_CAPACITY = 10; // 預設值，會被 Firestore settings 覆蓋
+const GROOMING_SLOTS    = ['10:00','11:00','14:00','15:00','16:00'];
+let   BOARDING_CAPACITY = 10;
 
-// 讀取 settings（住宿房間上限）
+// 讀取住宿房間上限設定
 async function loadSettings() {
     try {
         const snap = await getDoc(doc(db, "settings", "capacity"));
@@ -76,6 +75,47 @@ document.getElementById('logoutBtn').onclick = () => {
 };
 
 // ════════════════════════════════════════════
+// 時段狀態更新（已預約 → disabled + 標註）
+// ════════════════════════════════════════════
+async function updateTimeSlots(dateStr) {
+    if (!dateStr) return;
+    try {
+        const q = query(
+            collection(db, "bookings"),
+            where("service", "==", "洗澡美容"),
+            where("date", "==", dateStr),
+            where("status", "in", ["Pending", "Confirmed", "CheckedIn"])
+        );
+        const snap = await getDocs(q);
+        const bookedTimes = new Set();
+        snap.forEach(d => bookedTimes.add(d.data().time));
+
+        const timeSelect = document.getElementById('timeSelect');
+        Array.from(timeSelect.options).forEach(opt => {
+            // 先還原乾淨文字（移除舊的標注）
+            opt.text = opt.text.replace('（已被預約）', '').trim();
+            if (bookedTimes.has(opt.value)) {
+                opt.disabled = true;
+                opt.text += '（已被預約）';
+            } else {
+                opt.disabled = false;
+            }
+        });
+
+        // 若目前選中的時段已被禁用，自動跳到第一個可用時段
+        if (timeSelect.selectedOptions[0]?.disabled) {
+            const firstAvail = Array.from(timeSelect.options).find(o => !o.disabled);
+            if (firstAvail) timeSelect.value = firstAvail.value;
+        }
+    } catch(e) { console.error("時段載入失敗", e); }
+}
+
+// 日期選擇變更時更新時段
+document.getElementById('dateInput').addEventListener('change', (e) => {
+    updateTimeSlots(e.target.value);
+});
+
+// ════════════════════════════════════════════
 // 服務切換
 // ════════════════════════════════════════════
 document.getElementById('serviceSelect').addEventListener('change', (e) => {
@@ -88,11 +128,15 @@ document.getElementById('serviceSelect').addEventListener('change', (e) => {
 // 寵物選擇 → 帶入預覽 & 過濾服務
 // ════════════════════════════════════════════
 document.getElementById('petSelect').addEventListener('change', async (e) => {
-    const petId  = e.target.value;
+    const petId   = e.target.value;
     const preview = document.getElementById('petInfoPreview');
     const serviceSelect = document.getElementById('serviceSelect');
 
-    if (!petId) { preview.classList.add('hidden'); Array.from(serviceSelect.options).forEach(o => o.hidden = false); return; }
+    if (!petId) {
+        preview.classList.add('hidden');
+        Array.from(serviceSelect.options).forEach(o => o.hidden = false);
+        return;
+    }
 
     try {
         const snap = await getDoc(doc(db, "pets", petId));
@@ -120,7 +164,7 @@ document.getElementById('petSelect').addEventListener('change', async (e) => {
 });
 
 // ════════════════════════════════════════════
-// 送出預約（修正防撞機制）
+// 送出預約
 // ════════════════════════════════════════════
 document.getElementById('bookBtn').onclick = async () => {
     const petId = document.getElementById('petSelect').value;
@@ -138,7 +182,7 @@ document.getElementById('bookBtn').onclick = async () => {
         const endDate   = document.getElementById('endDateInput').value;
         finalTime = document.getElementById('boardingTimeSelect').value;
         if (!startDate || !endDate) return alert("⚠️ 請填寫完整入住與退房日期");
-        if (startDate >= endDate)    return alert("⚠️ 退房日期必須晚於入住日期！");
+        if (startDate >= endDate)   return alert("⚠️ 退房日期必須晚於入住日期！");
         finalDate = `${startDate} 至 ${endDate}`;
         checkDate = startDate;
         if (document.getElementById('addOnGrooming').checked) addOnService = "加購退房前美容服務";
@@ -146,19 +190,21 @@ document.getElementById('bookBtn').onclick = async () => {
         finalDate = document.getElementById('dateInput').value;
         finalTime = document.getElementById('timeSelect').value;
         if (!finalDate) return alert("⚠️ 請選擇預約日期");
+        // 確認選到的時段沒有被禁用
+        const timeSelect = document.getElementById('timeSelect');
+        if (timeSelect.selectedOptions[0]?.disabled) return alert("⚠️ 此時段已被預約，請選擇其他時段！");
         checkDate = finalDate;
     }
 
-    // ── 防撞：美容看時段，住宿看房間數，兩者完全獨立 ──
+    // ── 防撞（雙重保險，美容 / 住宿完全獨立）──
     const q = query(
         collection(db, "bookings"),
         where("service", "==", service),
-        where("status", "in", ["Pending","Confirmed","CheckedIn"])
+        where("status", "in", ["Pending", "Confirmed", "CheckedIn"])
     );
     const checkSnap = await getDocs(q);
 
     if (service === '洗澡美容') {
-        // 只看同日同時段
         let conflict = false;
         checkSnap.forEach(d => {
             const b = d.data();
@@ -166,11 +212,9 @@ document.getElementById('bookBtn').onclick = async () => {
         });
         if (conflict) return alert(`⚠️ 抱歉！${checkDate} 的 ${finalTime} 美容時段已額滿，請選擇其他時段。`);
     } else {
-        // 住宿：計算入住日當天在住數量（只要入住日 <= checkDate < 退房日 都算）
         let occupancy = 0;
         checkSnap.forEach(d => {
             const b = d.data();
-            // date 格式: "2024-06-15 至 2024-06-18"
             const parts = b.date.split(' 至 ');
             if (parts.length === 2) {
                 const [s, e] = parts;
@@ -197,6 +241,8 @@ document.getElementById('bookBtn').onclick = async () => {
         });
         alert("🎉 預約成功！請等候櫃台人員確認。");
         document.getElementById('addOnGrooming').checked = false;
+        // 重新更新時段狀態
+        updateTimeSlots(checkDate);
         fetchMyBookings();
         renderCalendar(window.calYear, window.calMonth);
     } catch(e) { alert("預約失敗: " + e); }
@@ -297,7 +343,6 @@ async function fetchMyBookings() {
         Cancelled: { bg:'#ffebee', color:'#c62828' },
     };
 
-    // 排序：新的在上面
     const docs = [];
     snap.forEach(d => docs.push({ id: d.id, ...d.data() }));
     docs.sort((a,b) => (b.createdAt||'') > (a.createdAt||'') ? 1 : -1);
@@ -329,6 +374,9 @@ window.cancelMyBooking = async (docId) => {
     try {
         await updateDoc(doc(db, "bookings", docId), { status: "Cancelled" });
         alert("✅ 預約已成功取消！");
+        // 取消後重新載入時段狀態
+        const dateInput = document.getElementById('dateInput');
+        if (dateInput.value) updateTimeSlots(dateInput.value);
         fetchMyBookings();
         renderCalendar(window.calYear, window.calMonth);
     } catch(e) { alert("取消失敗：" + e.message); }
@@ -357,32 +405,28 @@ async function renderCalendar(year, month) {
     const padStart = `${year}-${padMonth}-01`;
     const padEnd   = `${year}-${padMonth}-${String(lastDay.getDate()).padStart(2,'0')}`;
 
-    // 只查該服務的非取消預約
-    const q    = query(collection(db, "bookings"), where("service", "==", type === 'grooming' ? '洗澡美容' : '星級住宿'), where("status", "in", ["Pending","Confirmed","CheckedIn"]));
+    const q    = query(
+        collection(db, "bookings"),
+        where("service", "==", type === 'grooming' ? '洗澡美容' : '星級住宿'),
+        where("status", "in", ["Pending","Confirmed","CheckedIn"])
+    );
     const snap = await getDocs(q);
 
-    // 統計
-    const dayData = {}; // date -> { slots: Set<time> } for grooming, { count } for boarding
-
+    const dayData = {};
     snap.forEach(d => {
         const b = d.data();
         if (type === 'grooming') {
-            // date 是單日字串
             if (b.date >= padStart && b.date <= padEnd) {
                 if (!dayData[b.date]) dayData[b.date] = new Set();
                 dayData[b.date].add(b.time);
             }
         } else {
-            // date 是 "start 至 end"，計算每天在住數
             const parts = b.date.split(' 至 ');
             if (parts.length === 2) {
                 const [s, e] = parts;
-                // 遍歷該月每天看是否被覆蓋
                 for (let d2 = 1; d2 <= lastDay.getDate(); d2++) {
                     const ds = `${year}-${padMonth}-${String(d2).padStart(2,'0')}`;
-                    if (s <= ds && ds < e) {
-                        dayData[ds] = (dayData[ds] || 0) + 1;
-                    }
+                    if (s <= ds && ds < e) dayData[ds] = (dayData[ds] || 0) + 1;
                 }
             }
         }
@@ -406,15 +450,15 @@ async function renderCalendar(year, month) {
             cls += ' past';
         } else if (type === 'grooming') {
             const bookedSlots = dayData[ds] ? dayData[ds].size : 0;
-            const total = GROOMING_SLOTS.length; // 5
+            const total = GROOMING_SLOTS.length;
             if (bookedSlots >= total)        { cls += ' full';      subText = '已滿'; }
             else if (bookedSlots >= total-2) { cls += ' partial';   subText = `剩 ${total-bookedSlots} 時段`; onclick = `onclick="calJumpToBooking('${ds}','grooming')"`; }
-            else                             { cls += ' available'; subText = `${total-bookedSlots} 時段`; onclick = `onclick="calJumpToBooking('${ds}','grooming')"`; }
+            else                             { cls += ' available'; subText = `${total-bookedSlots} 時段`;    onclick = `onclick="calJumpToBooking('${ds}','grooming')"`; }
         } else {
             const occupancy = dayData[ds] || 0;
             if (occupancy >= BOARDING_CAPACITY)        { cls += ' full';      subText = '已滿'; }
             else if (occupancy >= BOARDING_CAPACITY-3) { cls += ' partial';   subText = `剩 ${BOARDING_CAPACITY-occupancy} 間`; onclick = `onclick="calJumpToBooking('${ds}','boarding')"`; }
-            else                                       { cls += ' available'; subText = `${BOARDING_CAPACITY-occupancy} 間`; onclick = `onclick="calJumpToBooking('${ds}','boarding')"`; }
+            else                                       { cls += ' available'; subText = `${BOARDING_CAPACITY-occupancy} 間`;    onclick = `onclick="calJumpToBooking('${ds}','boarding')"`; }
         }
 
         if (isToday) cls += ' today';
@@ -428,21 +472,23 @@ async function renderCalendar(year, month) {
 }
 
 window.calJumpToBooking = (dateStr, type) => {
-    // 切換日曆 tab
     window.currentCalType = type;
     document.getElementById('calTabGrooming').classList.toggle('active', type === 'grooming');
     document.getElementById('calTabBoarding').classList.toggle('active', type === 'boarding');
 
     document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+
     setTimeout(() => {
-        // 切換服務
         const serviceSelect = document.getElementById('serviceSelect');
         if (type === 'grooming') {
             serviceSelect.value = '洗澡美容';
             document.getElementById('groomingBox').classList.remove('hidden');
             document.getElementById('boardingBox').classList.add('hidden');
             const dateInput = document.getElementById('dateInput');
-            if (dateInput) dateInput.value = dateStr;
+            if (dateInput) {
+                dateInput.value = dateStr;
+                updateTimeSlots(dateStr); // ← 帶入日期後同步更新時段狀態
+            }
         } else {
             serviceSelect.value = '星級住宿';
             document.getElementById('groomingBox').classList.add('hidden');
