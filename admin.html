@@ -50,14 +50,17 @@
         </div>
 
         <div id="actionArea" class="action-panel hidden" style="background:#fff9f2; border-color:#ffe8d1;">
-            <h3 style="margin-top: 0; color: #e67e22;">2. 執行到店辦理手續 (Check-in Procedures)</h3>
+            <h3 style="margin-top: 0; color: #e67e22;">2. 執行辦理手續</h3>
             <div id="detailText" style="margin-bottom: 15px; line-height: 1.6; font-size: 15px;"></div>
 
-            <label style="font-weight: bold; color: #d35400;">🏥 現場安全核對—疫苗檢查 (Vaccine Status)：</label>
-            <select id="vaccineStatus">
-                <option value="valid">✅ 疫苗紀錄有效 (Valid)</option>
-                <option value="expired">❌ 疫苗過期、未齊全 (Expired)</option>
-            </select>
+            <!-- 疫苗核對區塊：美容服務時自動隱藏 -->
+            <div id="vaccineSection">
+                <label style="font-weight: bold; color: #d35400;">🏥 現場安全核對—疫苗檢查 (Vaccine Status)：</label>
+                <select id="vaccineStatus">
+                    <option value="valid">✅ 疫苗紀錄有效 (Valid)</option>
+                    <option value="expired">❌ 疫苗過期、未齊全 (Expired)</option>
+                </select>
+            </div>
 
             <div style="display: flex; justify-content: space-between; margin-top: 15px;">
                 <button id="checkInBtn" class="update-btn">✅ 確認核准並辦理入住</button>
@@ -67,7 +70,7 @@
 
         <h3>📅 系統全體客戶紀錄總表</h3>
         <table>
-            <thead><tr><th>預約期間</th><th>寵物名</th><th>服務項目 & 加購細項</th><th>狀態</th></tr></thead>
+            <thead><tr><th>預約期間</th><th>寵物名 / 種類</th><th>服務項目 & 加購細項</th><th>狀態</th></tr></thead>
             <tbody id="allBookingsTable"></tbody>
         </table>
     </div>
