@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Pet System - Receptionist Check-in</title>
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: #f9f6f0; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background-color: #ffffff; padding: 30px 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 500px; }
+        h2 { margin-top: 0; color: #5c4d43; font-size: 22px; border-bottom: 2px solid #f0e9df; padding-bottom: 10px; }
+        label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #666; }
+        input { width: 100%; box-sizing: border-box; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; }
+        button.primary { width: 100%; padding: 12px; background-color: #8b7355; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        #resultArea p { margin: 8px 0; background-color: #fcfbf9; padding: 10px; border-left: 4px solid #8b7355; border-radius: 4px; }
+        h3 { margin-top: 30px; font-size: 16px; color: #5c4d43; border-bottom: 1px solid #f0e9df; padding-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; text-align: left; }
+        th { background-color: #f0e9df; padding: 8px; color: #5c4d43; }
+        td { padding: 8px; border-bottom: 1px solid #f9f6f0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🐾 櫃台報到系統</h2>
+        <label>輸入飼主編號 (Owner ID):</label>
+        <input type="text" id="ownerIdInput" placeholder="例如: O-123">
+        <button class="primary" onclick="searchBooking()">🔍 搜尋預約</button>
+        <div id="resultArea"></div>
+        <h3>📅 今日預約總表</h3>
+        <table>
+            <thead><tr><th>預約單號</th><th>寵物名</th><th>狀態</th></tr></thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+    <script src="admin.js"></script>
+</body>
+</html>
