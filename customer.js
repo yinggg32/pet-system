@@ -2,112 +2,99 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getFirestore, collection, addDoc, getDocs, query, where, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCBSj96SOqhiQgMjOHoku3ARM52FAp5qyg",
-  authDomain: "pet-system-609ed.firebaseapp.com",
-  projectId: "pet-system-609ed",
-  storageBucket: "pet-system-609ed.firebasestorage.app",
-  messagingSenderId: "1025593733737",
-  appId: "1:1025593733737:web:542bb4a633d6e88b0fe8f8"
+    apiKey: "AIzaSyCBSj96SOqhiQgMjOHoku3ARM52FAp5qyg",
+    authDomain: "pet-system-609ed.firebaseapp.com",
+    projectId: "pet-system-609ed",
+    storageBucket: "pet-system-609ed.firebasestorage.app",
+    messagingSenderId: "1025593733737",
+    appId: "1:1025593733737:web:542bb4a633d6e88b0fe8f8"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-let currentPhone = null;
+let userPhone = null;
 
-// UI 切換邏輯
-document.getElementById('showRegBtn').onclick = () => {
-    document.getElementById('registerFields').classList.remove('hidden');
-    document.getElementById('registerBtn').classList.remove('hidden');
-    document.getElementById('cancelRegBtn').classList.remove('hidden');
-    document.getElementById('loginBtn').classList.add('hidden');
-    document.getElementById('showRegBtn').classList.add('hidden');
-};
-document.getElementById('cancelRegBtn').onclick = () => {
-    document.getElementById('registerFields').classList.add('hidden');
-    document.getElementById('registerBtn').classList.add('hidden');
-    document.getElementById('cancelRegBtn').classList.add('hidden');
-    document.getElementById('loginBtn').classList.remove('hidden');
-    document.getElementById('showRegBtn').classList.remove('hidden');
+// UI 切換
+document.getElementById('toggleRegBtn').onclick = () => {
+    document.getElementById('regFields').classList.toggle('hidden');
+    document.getElementById('registerBtn').classList.toggle('hidden');
+    document.getElementById('loginBtn').classList.toggle('hidden');
+    document.getElementById('toggleRegBtn').innerText = document.getElementById('regFields').classList.contains('hidden') ? "還不是會員？我要註冊" : "已有帳號？返回登入";
 };
 
-// 註冊功能
+// 註冊
 document.getElementById('registerBtn').onclick = async () => {
-    const phone = document.getElementById('phoneInput').value.trim();
-    const name = document.getElementById('nameInput').value.trim();
-    if (!phone || !name) return alert("手機與姓名不可為空！");
-
-    try {
-        const docRef = doc(db, "members", phone);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) return alert("此手機已註冊過，請直接登入！");
-
-        await setDoc(docRef, { name: name, phone: phone });
-        alert("註冊成功！自動為您登入。");
-        executeLogin(phone, name);
-    } catch (error) { alert("註冊失敗：" + error.message); }
+    const phone = document.getElementById('phoneInput').value;
+    const name = document.getElementById('nameInput').value;
+    if(!phone || !name) return alert("請填寫完整");
+    await setDoc(doc(db, "members", phone), { name, phone });
+    alert("註冊成功！");
+    doLogin(phone, name);
 };
 
-// 登入功能
+// 登入
 document.getElementById('loginBtn').onclick = async () => {
-    const phone = document.getElementById('phoneInput').value.trim();
-    if (!phone) return alert("請輸入手機號碼");
-
-    try {
-        const docRef = doc(db, "members", phone);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            executeLogin(phone, docSnap.data().name);
-        } else {
-            alert("找不到此會員，請先註冊！");
-        }
-    } catch (error) { alert("登入失敗：" + error.message); }
+    const phone = document.getElementById('phoneInput').value;
+    const snap = await getDoc(doc(db, "members", phone));
+    if(snap.exists()) {
+        doLogin(phone, snap.data().name);
+    } else {
+        alert("手機號碼未註冊");
+    }
 };
 
-function executeLogin(phone, name) {
-    currentPhone = phone;
+function doLogin(phone, name) {
+    userPhone = phone;
     document.getElementById('authSection').classList.add('hidden');
     document.getElementById('dashboardSection').classList.remove('hidden');
-    document.getElementById('welcomeMsg').innerText = `歡迎回來，${name}！`;
+    document.getElementById('userWelcome').innerText = `你好，${name}！`;
     fetchMyBookings();
 }
 
-document.getElementById('logoutBtn').onclick = () => {
-    currentPhone = null;
-    document.getElementById('phoneInput').value = '';
-    document.getElementById('authSection').classList.remove('hidden');
-    document.getElementById('dashboardSection').classList.add('hidden');
-};
-
-// 新增預約
+// 預約功能 (包含防撞機制！)
 document.getElementById('bookBtn').onclick = async () => {
-    const petName = document.getElementById('petNameInput').value.trim();
+    const pet = document.getElementById('petNameInput').value;
     const service = document.getElementById('serviceSelect').value;
-    if (!petName) return alert("請輸入寵物名字！");
+    const date = document.getElementById('dateInput').value;
+    const time = document.getElementById('timeSelect').value;
 
-    const randomId = "B-" + Math.floor(1000 + Math.random() * 9000);
+    if(!pet || !date) return alert("請填寫完整日期與寵物名字");
+
+    // 【防撞機制核心】: 查詢該時段是否已有預約
+    const q = query(collection(db, "bookings"),
+        where("date", "==", date),
+        where("time", "==", time),
+        where("status", "!=", "Cancelled") // 已取消的時段不算
+    );
+
+    const checkSnap = await getDocs(q);
+    if(!checkSnap.empty) {
+        return alert(`⚠️ 抱歉！${date} ${time} 這個時段已經有人預約了，請選擇其他時段。`);
+    }
+
     try {
         await addDoc(collection(db, "bookings"), {
-            bookingId: randomId,
-            ownerId: currentPhone,
-            petName: petName,
+            ownerId: userPhone,
+            petName: pet,
             service: service,
-            status: "Pending"
+            date: date,
+            time: time,
+            status: "Pending", // 預設為待確認
+            createdAt: new Date()
         });
-        alert("✅ 預約單已送出！");
-        document.getElementById('petNameInput').value = '';
+        alert("🎉 預約成功！請等候櫃台人員確認。");
         fetchMyBookings();
-    } catch (error) { alert("預約失敗：" + error.message); }
+    } catch(e) { alert("失敗:" + e); }
 };
 
-// 讀取個人預約
 async function fetchMyBookings() {
-    const q = query(collection(db, "bookings"), where("ownerId", "==", currentPhone));
-    const querySnapshot = await getDocs(q);
+    const q = query(collection(db, "bookings"), where("ownerId", "==", userPhone));
+    const snap = await getDocs(q);
     const tbody = document.getElementById('myBookingsTable');
     tbody.innerHTML = '';
-    querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        let color = data.status === 'Cancelled' ? '#d9534f' : (data.status === 'CheckedIn' ? '#5cb85c' : '#f0ad4e');
-        tbody.innerHTML += `<tr><td>${data.bookingId}</td><td>${data.petName}</td><td>${data.service}</td><td style="color:${color}; font-weight:bold;">${data.status}</td></tr>`;
+    snap.forEach(d => {
+        const b = d.data();
+        let badge = b.status === 'Pending' ? '#f39c12' : (b.status === 'Confirmed' ? '#3498db' : (b.status === 'CheckedIn' ? '#27ae60' : '#e74c3c'));
+        tbody.innerHTML += `<tr><td>${b.date} ${b.time}</td><td>${b.petName}</td><td><span class="status-badge" style="background:${badge}; color:white">${b.status}</span></td></tr>`;
     });
 }
