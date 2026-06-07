@@ -63,6 +63,7 @@ function doLogin(phone, name) {
     fetchMyPets();
     fetchMyBookings();
     subscribeMessages();
+    if (window.setDateLimits) window.setDateLimits();
 }
 
 document.getElementById('logoutBtn').onclick = () => {
