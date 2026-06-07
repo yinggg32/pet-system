@@ -1,48 +1,180 @@
-====================================================================
-Project: Pet Grooming & Boarding System - Receptionist Check-in
-Architecture: Serverless Cloud-Native (Vercel + Firebase Firestore)
-Author: 葉采瑩 (411277029)
-Date: 2026-06
-====================================================================
+# 🐾 汪喵精品旅館 — Pet Hotel Booking System
 
-【1. 系統架構說明 (System Architecture)】
-本系統採用現代化的 Serverless (無伺服器) 全端架構實作，以完美對應設計階段的 UML 圖表：
-- 前端 (Frontend): HTML5, CSS3, Vanilla JavaScript (ES6 Modules)
-- 後端與資料庫 (Backend & Database): Google Firebase Cloud Firestore (BaaS)
-- 部署環境 (Deployment): 透過 Vercel 進行雲端託管
+一個為寵物旅館量身打造的全端預約管理系統，支援顧客線上預約、即時訊息溝通、員工後台管理，以及即時空位日曆查詢。
 
-本系統去除了傳統的本地端伺服器 (如 Python/Flask)，前端直接透過 Firebase Web SDK (v10) 與雲端資料庫進行即時連線，實現高可用性與低延遲的資料同步。
+**Live Demo：** [pet-system-puce.vercel.app](https://pet-system-puce.vercel.app)
 
+---
 
-【2. 專案檔案結構 (File Structure)】
-- index.html   : 系統前端介面 (UI)，包含搜尋框、按鈕與今日預約總表。
-- app.js       : 核心業務邏輯，包含 Firebase 初始化、API 請求，以及實作 Sequence Diagram 與 State Diagram 中的狀態切換邏輯。
-- Readme.txt   : 本說明文件。
+## 技術架構
 
+| 層級 | 技術 |
+|------|------|
+| 前端 | HTML5 / CSS3 / Vanilla JavaScript (ES Module) |
+| 資料庫 | Firebase Cloud Firestore |
+| 部署 | Vercel（連接 GitHub 自動部署） |
+| 字型 | Google Fonts（Playfair Display、Noto Serif TC） |
 
-【3. 核心功能與 UML 對應關係 (Features & Traceability)】
-1. 預約總表即時讀取：
-   - 網頁載入時自動向 Firestore 的 `bookings` 集合發送請求，展示所有資料。
-2. 飼主預約查詢 (對應 Sequence Diagram: Request booking data)：
-   - 輸入 Owner ID 即可透過 `where` 查詢條件，精準抓取對應的預約單。
-3. 疫苗檢核邏輯 (對應 Sequence Diagram: alt Vaccine Expired/Valid)：
-   - 實作前端 if/else 判斷。若選擇「過期」，系統將觸發 Reject Warning (拒絕報到)。
-   - 若選擇「有效」，則發送 `updateDoc` 請求至資料庫。
-4. 狀態機切換 (對應 State Diagram: Confirmed -> CheckedIn / Cancelled)：
-   - 提供「確認報到」與「取消預約」功能，點擊後會即時修改雲端資料庫的 `status` 屬性，並同步更新畫面。
+---
 
+## 功能總覽
 
-【4. 執行與測試方式 (How to Run)】
+### 顧客端（`index.html` + `customer.js`）
 
-[方法 A：雲端線上測試 (推薦)]
-本專案已部署至雲端，可直接點擊下方連結進行測試，無需配置本地環境：
-線上連結：[請在這裡貼上你剛剛 Vercel 生出來的網址，例如 https://pet-system-xxx.vercel.app]
+**品牌首頁**
+- 全螢幕 Hero 大圖，進場縮放動畫
+- 固定頂部 Navbar，滾動不消失
+- 服務介紹卡片（洗澡美容 / 星級住宿）
+- 六格特色賣點區塊
+- 顧客評價牆
+- LINE 浮動客服按鈕
+- 滾動進場動畫（Scroll Reveal）
+- 完整 RWD 響應式設計（768px / 480px 斷點）
 
-[方法 B：本地開發環境測試 (Local Development)]
-由於本專案採用了 ES6 Modules (`type="module"`) 引入 Firebase SDK，直接雙擊打開 index.html 可能會遇到瀏覽器的 CORS 安全限制。
-請依下列步驟執行：
-1. 使用具備 Live Server 功能的編輯器 (如 PyCharm 內建的瀏覽器預覽，或 VS Code 的 Live Server 擴充套件)。
-2. 啟動 Local Server 後開啟 `index.html`。
-3. 確保測試電腦具備網路連線，系統將自動連線至 Firebase 雲端資料庫抓取測試資料。
+**即時空位日曆**
+- 美容 / 住宿雙模式切換
+- 綠色（有空位）/ 黃色（剩少量）/ 紅色（已滿）/ 灰色（已過去）
+- 點擊可用日期自動跳轉預約區並帶入日期
 
-====================================================================
+**會員系統**
+- 手機號碼 + 密碼註冊 / 登入
+- 資料儲存於 Firestore `members` 集合
+
+**寵物檔案**
+- 建立多筆寵物資料（名字、種類、品種、生日、過敏史、疫苗日期）
+- 預約時直接從下拉選單帶入，不用每次重填
+- 生日 / 疫苗日期限制不能選未來
+
+**線上預約**
+- 洗澡美容：選日期 + 時段（已預約時段自動顯示「已被預約」並 disabled）
+- 星級住宿：選入住 / 退房日期，支援加購退房前美容
+- 倉鼠 / 兔子自動過濾掉洗澡美容選項
+- 防撞機制：美容看時段、住宿看房間數，兩者完全獨立
+- 預約日期限制不能選過去
+
+**預約紀錄**
+- 顯示所有預約，支援取消（Pending / Confirmed 狀態）
+- 狀態 Badge 色碼：橘（Pending）/ 藍（Confirmed）/ 綠（CheckedIn）/ 紫（Completed）/ 紅（Cancelled）
+
+**站內訊息**
+- 預約成功 / 取消自動發系統通知
+- 顧客可與旅館即時對話
+- 未讀訊息紅色數字 Badge 提示
+- 即時更新（Firebase `onSnapshot`）
+
+---
+
+### 員工後台（`admin.html` + `admin.js`）
+
+**登入**
+- 密碼驗證（`admin123`）
+
+**預約管理**
+- 全客戶預約紀錄總表，按狀態排序（Pending 優先）
+- 搜尋功能（飼主手機號碼 / 寵物名字）
+- 快速確認接受（Pending → Confirmed）
+- 辦理手續流程：讀取詳情 → 疫苗核對（住宿）→ Check-in / 完成
+- 按鈕文字依服務類型動態切換（美容 vs 住宿）
+- 刪除單筆（僅 Cancelled / Completed）
+- 批次清除已取消 / 已完成紀錄
+
+**寵物檔案總覽**
+- 查閱所有顧客的寵物資料
+- 過敏史有填寫自動標紅字提醒
+- 搜尋功能（飼主手機 / 寵物名）
+
+**顧客訊息**
+- 左側顧客列表，有未讀排最上面
+- 右側即時對話框
+- 員工回覆後顧客端即時收到
+- 各操作（確認 / 入住 / 完成 / 取消）自動發系統訊息給顧客
+
+**系統設定**
+- 住宿房間數上限（儲存至 Firestore `settings/capacity`）
+- 即時生效，日曆空位計算同步更新
+
+---
+
+## Firestore 資料結構
+
+```
+members/{phone}
+  name, phone, password
+
+pets/{phone_petName}
+  ownerId, petName, petType, breed, birthday, allergy, vaccine
+
+bookings/{id}
+  ownerId, petId, petName, petType, service, date, time
+  addOn, status, createdAt, confirmedAt
+
+messages/{id}
+  ownerId, bookingId, sender, content, createdAt, read
+
+settings/capacity
+  boardingRooms
+```
+
+---
+
+## 預約狀態流程
+
+```
+Pending → Confirmed → CheckedIn（住宿）
+                    → Completed（美容）
+        → Cancelled（任一階段可取消）
+```
+
+---
+
+## 本地開發
+
+此專案為純靜態網站，不需要 Node.js 或打包工具。
+
+```bash
+# Clone 專案
+git clone https://github.com/your-repo/pet-system.git
+cd pet-system
+
+# 直接用 Live Server 或任意靜態伺服器開啟
+# VS Code 安裝 Live Server 擴充，右鍵 index.html → Open with Live Server
+```
+
+> Firebase 設定已內嵌於 JS 檔案中，clone 後可直接使用同一個 Firestore 資料庫。
+
+---
+
+## 專案結構
+
+```
+├── index.html       # 顧客端首頁
+├── customer.js      # 顧客端邏輯（Auth、預約、寵物檔案、訊息、日曆）
+├── admin.html       # 員工後台
+├── admin.js         # 後台邏輯（預約管理、訊息、設定）
+├── grooming.png     # 洗澡美容服務圖片
+├── boarding.png     # 星級住宿服務圖片
+├── hotel.png        # Hero 封面圖片
+└── README.md
+```
+
+---
+
+## 開發紀錄
+
+本系統從零開始迭代開發，主要功能里程碑：
+
+- ✅ 基礎預約系統（美容 / 住宿）
+- ✅ Firebase Auth + Firestore 整合
+- ✅ 品牌首頁改版（官網風格）
+- ✅ 寵物種類過濾（倉鼠 / 兔子不能美容）
+- ✅ 寵物健康檔案系統
+- ✅ Admin 確認接受流程（Pending → Confirmed）
+- ✅ 雙模式即時空位日曆
+- ✅ 修正防撞機制（美容 / 住宿獨立計算）
+- ✅ 美容時段 disabled 標示
+- ✅ 站內即時訊息系統
+- ✅ Admin 寵物檔案總覽 + 搜尋
+- ✅ 住宿房間數設定
+- ✅ 歷史資料刪除 / 批次清除
+- ✅ RWD 手機版響應式設計
+- ✅ LINE 客服浮動按鈕
